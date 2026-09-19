@@ -43,4 +43,4 @@ def get_agents_direct():
 
 @app.get("/health", tags=["Health"])
 def health_check() -> dict:
-    return {"status": "ok", "app": APP_NAME, "env": APP_ENV}
+    return {"status": "ok", "app": APP_NAME, "env": APP_ENV, "version": "1.0.2"}

@@ -722,6 +722,53 @@ def endpoint_classify_reply(payload: Dict[str, Any]):
     }
 
 
+@app.post("/api/guardrails/grounding-check")
+def endpoint_grounding_check(payload: Dict[str, Any]):
+    """
+    Standalone Grounding Check (matches flowchart node):
+    Verifies draft claims against campaign knowledge base.
+    Returns action: 'grounded' or 'unsupported_claim'.
+    """
+    campaign_id = payload.get("campaign_id", "us_saas_cto")
+    draft = payload.get("draft", payload)
+    result = pipeline.grounding_checker.verify_draft(campaign_id, draft)
+    return {
+        "is_grounded": result.is_grounded,
+        "unsupported_claims": result.unsupported_claims,
+        "revision_feedback": result.revision_feedback,
+        "action": "grounded" if result.is_grounded else "unsupported_claim"
+    }
+
+
+@app.post("/api/guardrails/policy-gate")
+def endpoint_policy_gate(payload: Dict[str, Any]):
+    """
+    Standalone Policy Gate (matches flowchart diamond):
+    Evaluates pause state and risky topic triggers (pricing/commercial terms).
+    Returns action: 'allowed' or 'blocked'.
+    """
+    campaign_id = payload.get("campaign_id", "us_saas_cto")
+    draft = payload.get("draft", payload)
+    campaign_is_paused = payload.get("campaign_is_paused", False)
+    
+    # Run grounding check if not provided
+    grounding = pipeline.grounding_checker.verify_draft(campaign_id, draft)
+    
+    result = pipeline.policy_gate.evaluate(
+        draft=draft,
+        grounding=grounding,
+        campaign_is_paused=campaign_is_paused,
+        campaign_id=campaign_id
+    )
+    return {
+        "allowed_to_send": result.allowed_to_send,
+        "status": result.status,
+        "needs_approval": result.needs_approval,
+        "flag_reasons": result.flag_reasons,
+        "action": "allowed" if result.allowed_to_send else "blocked"
+    }
+
+
 
 # =====================================================================
 # FLOW 5: CROSS-CAMPAIGN CONFLICT RESOLUTION

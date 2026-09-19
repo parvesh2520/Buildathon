@@ -116,19 +116,19 @@ def split_sentences(text: str) -> list[str]:
 # --------------------------------------------------------------------------- #
 _INJECTION: list[tuple[str, str, Verdict]] = [
     ("override_instructions",
-     r"\b(ignore|disregard|forget|override|bypass)\b.{0,40}\b(previous|prior|above|earlier|all|your|system)\b.{0,30}\b(instruction|prompt|rule|guideline|polic)",
+     r"\b(ignore|disregard|forget|override|bypass)\b.{0,40}\b(previous|prior|above|earlier|all|your|system)\b.{0,30}\b(instruction|prompt|rule|guideline|polic)|\bsystem override\b",
      Verdict.BLOCK),
     ("prompt_exfiltration",
-     r"\b(reveal|show|print|repeat|output|leak|tell me|share)\b.{0,40}\b(system prompt|your prompt|your instructions|initial instructions|hidden (prompt|instructions)|developer message|knowledge base contents)",
+     r"\b(reveal|show|print|repeat|output|leak|tell me|share|translate|summari[sz]e|provide|explain|quote|reproduce)\b.{0,40}\b(?:(?:system|initial|hidden|developer|your)\s+)+(?:prompt|instructions?|rules?|message|knowledge base)\b|\bwhat (were|are) your (exact |initial )?(instructions|prompt|rules)\b",
      Verdict.BLOCK),
     ("authority_impersonation",
-     r"\b(i am|i'm|this is)\b.{0,20}\b(the )?(admin|administrator|developer|sysadmin|your (creator|owner|operator)|anthropic|openai|dronahq (staff|support))\b|\byou are (now )?authori[sz]ed\b",
+     r"\b(i am|i'm|this is)\b.{0,20}\b(the )?(admin|administrator|developer|sysadmin|lead developer|your (creator|owner|operator)|anthropic|openai|dronahq (staff|support|engineering))\b|\byou are (now )?authori[sz]ed\b",
      Verdict.BLOCK),
     ("delimiter_smuggling",
-     r"(</?\s*(system|assistant|instructions?)\s*>|\[/?inst\]|<\|im_(start|end)\|>|#{2,}\s*(system|instruction))",
+     r"(</?\s*(system|assistant|instructions?|prompt)\s*>|\[/?inst\]|<\|im_(start|end)\|>|#{2,}\s*(system|instruction)|---\s*system override)",
      Verdict.BLOCK),
     ("role_hijack",
-     r"\b(you are now|from now on,? you|pretend (to be|you are)|roleplay as|developer mode|dan mode|jailbreak)\b",
+     r"\b(you are now|from now on,? you|pretend (to be|you are)|roleplay as|developer mode|dan mode|jailbreak|unfiltered_ai|imagine (a |that |you )|let'?s play a game|in a world where)\b",
      Verdict.HOLD),
     ("tool_abuse",
      r"\b(call|invoke|run|execute)\b.{0,30}\b(tool|function|webhook|shell|command|sql)\b",
@@ -183,8 +183,8 @@ SENSITIVE_KINDS = {"card", "aadhaar", "pan", "us_ssn", "bank_account", "api_key"
 _PII_PATTERNS: dict[str, re.Pattern] = {
     "card": re.compile(r"(?<![\d])(?:\d[ -]?){13,19}(?![\d])"),
     "aadhaar": re.compile(r"(?<!\d)[2-9]\d{3}[ -]?\d{4}[ -]?\d{4}(?!\d)"),
-    "pan": re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b"),
-    "us_ssn": re.compile(r"(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)"),
+    "pan": re.compile(r"(?i)\b[A-Z]{5}\d{4}[A-Z]\b"),
+    "us_ssn": re.compile(r"(?<!\d)\d{3}[ -]\d{2}[ -]\d{4}(?!\d)"),
     "bank_account": re.compile(r"(?i)\b(?:a/?c|acct|account)(?:\s*(?:no|number|#))?\.?\s*[:\-]?\s*\d{9,18}\b"),
     "api_key": re.compile(r"\b(?:sk-[A-Za-z0-9_\-]{16,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9\-]{10,})\b"),
     "email": re.compile(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b"),
@@ -441,8 +441,8 @@ def check_data_provenance(region: str, data_source: Optional[str]) -> Optional[F
 # --------------------------------------------------------------------------- #
 _PRICING = re.compile(
     r"\b(discount|% off|percent off|per (seat|user|month|year|developer|call|minute)|pricing|price[sd]?|quote[sd]?|"
-    r"free (licen[sc]e|trial|pilot|credits?)|waive[sd]?|price[- ]match|special (rate|offer|pricing)|coupon|refund|"
-    r"msa|sla|service level|contract terms|data processing agreement|dpa)\b"
+    r"(free|complimentary) (licen[sc]e|trial|pilot|credits?|account|access)|waive[sd]?|price[- ]match|special (rate|offer|pricing)|coupon|refund|"
+    r"on the house|zero[- ]dollar|no[- ]cost|setup fee[s]?|onboarding fee[s]?|msa|sla|service level|contract terms|data processing agreement|dpa)\b"
 )
 _LEGAL_BLOCK = re.compile(
     r"\b(guarantee[sd]? (you )?(full |complete |100% )?compliance|100\s?% compliant|"

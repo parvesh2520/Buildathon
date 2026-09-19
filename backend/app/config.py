@@ -13,6 +13,10 @@ SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "")
 SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
 SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "")
 
+# Resend HTTP Email API (Bypasses cloud provider SMTP firewall port blocks)
+RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL: str = os.getenv("RESEND_FROM_EMAIL", "Autonomous SDR <onboarding@resend.dev>")
+
 # DronaHQ Automation Webhook Settings
 DRONAHQ_WEBHOOK_URL: str = os.getenv(
     "DRONAHQ_WEBHOOK_URL",

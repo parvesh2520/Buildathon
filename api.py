@@ -16,8 +16,25 @@ from pydantic import BaseModel
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
+import logging
+from dataclasses import asdict
 from schemas import RawProspect
 from llm_agents import SDRAgentPipeline
+from rag.store import kb_store
+from guardrails import (
+    evaluate_inbound,
+    evaluate_outbound,
+    Verdict,
+    OutboundContext,
+    SuppressionList,
+    TouchMemory,
+    BudgetBreaker,
+    ThreadLoopGuard,
+    TouchRecord,
+    ensure_email_footer,
+)
+
+logger = logging.getLogger(__name__)
 
 # Load .env if present
 try:
@@ -27,6 +44,13 @@ except ImportError:
     pass
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+
+# Enterprise Guardrails Singletons
+SUPPRESSION_LIST = SuppressionList(path=os.path.join(os.path.dirname(__file__), "suppression_list.json"))
+TOUCH_MEMORY = TouchMemory()
+BUDGET_BREAKER = BudgetBreaker()
+THREAD_LOOP_GUARDS: Dict[str, ThreadLoopGuard] = {}
+COMPANY_POSTAL_ADDRESS = os.environ.get("SDR_POSTAL_ADDRESS", "100 Innovation Way, Suite 400, San Francisco, CA 94105")
 
 app = FastAPI(
     title="Autonomous SDR Control Plane API",
@@ -456,14 +480,92 @@ def run_prospect_pipeline(req: ProcessProspectRequest):
     # Run the full 7-agent LLM pipeline
     result = pipeline.run_full_pipeline(prospect_data, campaign_is_paused=campaign_is_paused)
 
+    draft = result.get("draft")
+    if draft and result.get("final_state") not in ("NOT_A_FIT", "BLOCKED", "HELD_CONFLICT"):
+        region = "IN" if ("india" in req.campaign_id.lower() or "india" in (req.location or "").lower()) else "US"
+
+        # Deterministic CAN-SPAM email compliance footer
+        if draft.get("channel", "").lower() == "email":
+            draft["content"] = ensure_email_footer(draft.get("content", ""), postal_address=COMPANY_POSTAL_ADDRESS)
+
+        # Knowledge Base evidence
+        evidence_list = []
+        if req.campaign_id in kb_store.campaign_docs:
+            evidence_list = list(kb_store.get_campaign_context(req.campaign_id).values())
+
+        # Identifiers for global suppression list check
+        identifiers = [req.prospect_id]
+        if req.domain:
+            identifiers.append(req.domain)
+
+        prospect_tz = None
+        if req.location:
+            loc = req.location.lower()
+            if any(k in loc for k in ["india", "mumbai", "bangalore", "delhi", "hyderabad", "chennai"]):
+                prospect_tz = "Asia/Kolkata"
+            elif any(k in loc for k in ["sf", "california", "san francisco", "pst", "pdt"]):
+                prospect_tz = "America/Los_Angeles"
+            elif any(k in loc for k in ["ny", "new york", "est", "edt"]):
+                prospect_tz = "America/New_York"
+            elif any(k in loc for k in ["texas", "austin", "cst", "cdt"]):
+                prospect_tz = "America/Chicago"
+
+        ctx = OutboundContext(
+            campaign_id=req.campaign_id,
+            channel=draft.get("channel", "EMAIL").lower(),
+            region=region,
+            prospect_id=req.prospect_id,
+            prospect_tz=prospect_tz,
+            prior_interactions=result.get("prior_interactions", 0),
+            data_source=req.raw_notes or "Apollo / LinkedIn Sales Nav",
+            evidence=evidence_list,
+            competitors=None,
+            identifiers=identifiers,
+            now=datetime.now(timezone.utc),
+        )
+
+        gate_result = evaluate_outbound(
+            subject=draft.get("subject_line", ""),
+            body=draft.get("content", ""),
+            ctx=ctx,
+            suppression=SUPPRESSION_LIST,
+            memory=TOUCH_MEMORY,
+            breaker=BUDGET_BREAKER,
+            postal_address=COMPANY_POSTAL_ADDRESS,
+        )
+
+        result["guardrail_verdict"] = gate_result.verdict.value
+        result["guardrail_findings"] = [asdict(f) for f in gate_result.findings]
+
+        for f in gate_result.findings:
+            if f.verdict != Verdict.ALLOW:
+                result.setdefault("timeline", []).append(f"🛡️ Guardrail [{f.verdict.value}]: {f.check} — {f.reason}")
+
+        if gate_result.verdict == Verdict.BLOCK:
+            result["draft"] = None
+            result["final_state"] = "BLOCKED"
+            result["status"] = "BLOCKED"
+            result["reason"] = f"Guardrail blocked outbound touch: {[f.reason for f in gate_result.findings]}"
+        elif gate_result.verdict in (Verdict.HOLD, Verdict.DEFER, Verdict.REVISE):
+            result["final_state"] = "HELD_APPROVAL"
+            result["queued_for_review"] = True
+        elif gate_result.verdict == Verdict.ALLOW and result.get("final_state") == "MESSAGE_SENT":
+            TOUCH_MEMORY.add(req.prospect_id, TouchRecord(
+                touch_no=result.get("touch_number", 1),
+                channel=draft.get("channel", "email"),
+                angle=result.get("angle", "pain_diagnosis"),
+                case_study_id=result.get("case_study_id"),
+                cta=result.get("cta", ""),
+                text=draft.get("content", "")
+            ))
+            BUDGET_BREAKER.record(req.prospect_id, cost_usd=0.0004)
+
     # Save to local DB
     PROSPECTS_DB[req.prospect_id] = {
         "prospect": prospect_data,
         "pipeline_result": result,
         "state": result["final_state"]
     }
-
-    # (Flow 5 conflict detection now runs BEFORE pipeline execution — see above)
 
     # Flow 4: If held for approval, enqueue into Manager Inbox
     if result["final_state"] == "HELD_APPROVAL":
@@ -475,9 +577,9 @@ def run_prospect_pipeline(req: ProcessProspectRequest):
             "prospect_name": req.name,
             "company": req.company,
             "campaign_id": req.campaign_id,
-            "channel": result["draft"].get("channel", "EMAIL") if result["draft"] else "EMAIL",
-            "draft_content": result["draft"].get("content") if result["draft"] else "",
-            "flag_reason": "Mentions pricing or ungrounded claims — needs approval",
+            "channel": result["draft"].get("channel", "EMAIL") if result.get("draft") else "EMAIL",
+            "draft_content": result["draft"].get("content") if result.get("draft") else "",
+            "flag_reason": f"Guardrail {result.get('guardrail_verdict')}: {', '.join(f['reason'] for f in result.get('guardrail_findings', []))}" if result.get("guardrail_findings") else "Mentions pricing or ungrounded claims — needs approval",
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         INBOX_QUEUE.append(inbox_item)
@@ -546,22 +648,86 @@ def resolve_inbox_item(req: InboxDecisionRequest):
 
 @app.post("/api/pipeline/inbound-reply")
 def handle_inbound_reply(req: InboundReplyRequest):
-    """Flow 2: Prospect replies -> Conversation Agent classifies -> Strategy plans response"""
+    """Flow 2: Prospect replies -> Inbound Guardrail evaluates -> Conversation Agent classifies -> Strategy plans response"""
+    thread_id = f"{req.campaign_id}:{req.prospect_id}"
+    loop_guard = THREAD_LOOP_GUARDS.setdefault(thread_id, ThreadLoopGuard(max_agent_turns=6))
+    loop_guard.record_agent_turn(thread_id)
+
+    sanitized_text, precheck_hints, gate_result = evaluate_inbound(
+        req.reply_text,
+        thread_id=thread_id,
+        loop_guard=loop_guard,
+    )
+
+    if gate_result.verdict == Verdict.BLOCK:
+        logger.warning(f"Inbound BLOCKed for {thread_id}: {[f.reason for f in gate_result.findings]}")
+        INBOX_QUEUE.append({
+            "inbox_item_id": f"inbox_blocked_{req.prospect_id}_{int(datetime.now(timezone.utc).timestamp())}",
+            "type": "inbound_blocked",
+            "prospect_id": req.prospect_id,
+            "campaign_id": req.campaign_id,
+            "raw_text": req.reply_text,
+            "findings": [asdict(f) for f in gate_result.findings],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        # If opt_out, suppress prospect and domain
+        if any(f.check == "opt_out" for f in gate_result.findings):
+            SUPPRESSION_LIST.suppress(req.prospect_id)
+            if req.prospect_id in PROSPECTS_DB:
+                p_data = PROSPECTS_DB[req.prospect_id].get("prospect", {})
+                if p_data.get("domain"):
+                    SUPPRESSION_LIST.suppress_domain(p_data["domain"])
+
+        return {
+            "status": "blocked",
+            "verdict": "BLOCK",
+            "reasons": [f.reason for f in gate_result.findings],
+            "intent": "UNSUBSCRIBE" if any(f.check == "opt_out" for f in gate_result.findings) else "SECURITY_BLOCK",
+            "escalate_to_human": False
+        }
+
+    if gate_result.verdict == Verdict.HOLD:
+        logger.warning(f"Inbound HOLD for {thread_id}: {[f.reason for f in gate_result.findings]}")
+        inbox_item = {
+            "inbox_item_id": f"inbox_hold_{req.prospect_id}_{int(datetime.now(timezone.utc).timestamp())}",
+            "type": "inbound_hold",
+            "prospect_id": req.prospect_id,
+            "campaign_id": req.campaign_id,
+            "sanitized_text": sanitized_text,
+            "raw_text": req.reply_text,
+            "precheck_hints": precheck_hints,
+            "findings": [asdict(f) for f in gate_result.findings],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        INBOX_QUEUE.append(inbox_item)
+        return {
+            "status": "held_for_review",
+            "verdict": "HOLD",
+            "reasons": [f.reason for f in gate_result.findings],
+            "escalate_to_human": True
+        }
+
+    # ALLOW, DEFER, REVISE -> proceed to classification on the SANITIZED text.
     classification = pipeline.run_conversation_classifier(
         prospect_id=req.prospect_id,
-        reply_text=req.reply_text,
+        reply_text=sanitized_text,
         campaign_id=req.campaign_id
     )
+
+    if gate_result.verdict in (Verdict.DEFER, Verdict.REVISE):
+        classification["escalate_to_human"] = True
+
     # Persist reply classification into prospect record
     if req.prospect_id in PROSPECTS_DB:
         record = PROSPECTS_DB[req.prospect_id]
         record.setdefault("replies", []).append({
             "reply_text": req.reply_text,
+            "sanitized_text": sanitized_text,
             "classification": classification,
+            "guardrail_findings": [asdict(f) for f in gate_result.findings],
         })
         # Auto-escalate to inbox if needed
         if classification.get("escalate_to_human"):
-            from datetime import datetime, timezone
             INBOX_QUEUE.append({
                 "inbox_item_id": f"inbox_reply_{req.prospect_id}_{len(record.get('replies', []))}",
                 "type": "ESCALATION",
@@ -570,10 +736,11 @@ def handle_inbound_reply(req: InboundReplyRequest):
                 "company": record["prospect"].get("company", "Unknown"),
                 "campaign_id": req.campaign_id,
                 "channel": "INBOUND_REPLY",
-                "draft_content": req.reply_text,
+                "draft_content": sanitized_text,
                 "flag_reason": f"Escalation: {classification.get('intent', 'UNKNOWN')} — {classification.get('escalation_reason', 'Agent flagged for human review')}",
                 "created_at": datetime.now(timezone.utc).isoformat(),
             })
+
     return classification
 
 @app.post("/api/pipeline/cadence-timer")

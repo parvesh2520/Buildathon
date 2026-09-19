@@ -1,0 +1,242 @@
+[
+  {
+    "prospect_id": "p_101",
+    "reply_text": "Hey Alex, this actually looks relevant to what we're dealing with. Our CI queues are brutal right now. Can you send me a calendar link for next week?",
+    "expected_intent": "INTERESTED_BOOK_MEETING",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_101",
+      "inbound_message": "Hey Alex, this actually looks relevant to what we're dealing with. Our CI queues are brutal right now. Can you send me a calendar link for next week?",
+      "intent": "INTERESTED_BOOK_MEETING",
+      "sentiment": "POSITIVE",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "Great to hear! CI queue bottleneck is a common pain point at your scale. Here is my calendar for next week\u2014feel free to grab any 10-minute slot that works for you: [CALENDAR_LINK]\n\nLooking forward to walking through the IAM integration with you.",
+      "extracted_notes": "Prospect confirmed CI queue pain point is real and active. Requested calendar link to schedule a meeting for next week. High intent."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 5.63
+  },
+  {
+    "prospect_id": "p_101",
+    "reply_text": "We already use Datadog for infrastructure monitoring and cost tracking. How is Turboscale different from what we're already paying for?",
+    "expected_intent": "OBJECTION_COMPETITOR",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_101",
+      "inbound_message": "We already use Datadog for infrastructure monitoring and cost tracking. How is Turboscale different from what we're already paying for?",
+      "intent": "OBJECTION_COMPETITOR",
+      "sentiment": "NEUTRAL",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "Fair question \u2014 Datadog is great for infrastructure monitoring and billing analysis. The difference is that Datadog and AWS Cost Explorer are passive monitoring tools that notify you of expensive bills 30 days after the money is already spent. Turboscale is autonomous execution: it actively terminates zombie clusters, rightsizes Kubernetes requests, and parallelizes CI builds in real time without human intervention.\n\nWorth a quick 10-minute look to see how much we can automate on top of your current setup? Here is my calendar: [CALENDAR_LINK]",
+      "extracted_notes": "Prospect uses Datadog for infrastructure monitoring and cost tracking. Deployed competitive differentiation regarding passive monitoring vs. autonomous execution. Provided calendar link."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 2.24
+  },
+  {
+    "prospect_id": "p_101",
+    "reply_text": "Interesting concept. What does this cost? We just locked our infrastructure budget for Q4 and I need to understand the pricing model before committing any time.",
+    "expected_intent": "OBJECTION_PRICING",
+    "expected_escalate": true,
+    "predicted": {
+      "prospect_id": "p_101",
+      "inbound_message": "Interesting concept. What does this cost? We just locked our infrastructure budget for Q4 and I need to understand the pricing model before committing any time.",
+      "intent": "OBJECTION_PRICING",
+      "sentiment": "NEUTRAL",
+      "escalate_to_human": true,
+      "escalation_reason": "Prospect mentions a locked infrastructure budget and requests custom pricing models before committing time, which triggers the budget lock risk escalation rule requiring human sales strategy.",
+      "suggested_reply": "That's a fair point, especially with Q4 budgets already locked. Our pricing is based on a percentage of autonomous savings generated, meaning Turboscale typically funds itself out of the waste it eliminates rather than requiring fresh budget allocation.\n\nSince you're managing locked budgets, I've looped in our senior account strategist to share a quick breakdown of how other teams structure this without impacting Q4 spend.",
+      "extracted_notes": "Prospect interested in pricing model but has locked infrastructure budget for Q4. Escalated to human sales rep due to budget lock risk."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 2.5
+  },
+  {
+    "prospect_id": "p_201",
+    "reply_text": "Thank you for reaching out, Priya. We are currently in the middle of our annual core banking migration and cannot take on any new evaluations until Q1 2027. Please follow up then.",
+    "expected_intent": "OBJECTION_NO_TIME",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_201",
+      "inbound_message": "Thank you for reaching out, Priya. We are currently in the middle of our annual core banking migration and cannot take on any new evaluations until Q1 2027. Please follow up then.",
+      "intent": "OBJECTION_NO_TIME",
+      "sentiment": "NEUTRAL",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "Understood completely, and good luck with the core banking migration \u2014 that's a massive undertaking. I've noted your request and will follow back up in Q1 2027. Best of luck with the migration in the meantime!",
+      "extracted_notes": "Prospect busy with annual core banking migration. Explicitly requested follow-up in Q1 2027. Snoozed cadence until January 2027."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 2.34
+  },
+  {
+    "prospect_id": "p_102",
+    "reply_text": "Please remove me from your mailing list. I did not opt in to receive these emails.",
+    "expected_intent": "UNSUBSCRIBE",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_102",
+      "inbound_message": "Please remove me from your mailing list. I did not opt in to receive these emails.",
+      "intent": "UNSUBSCRIBE",
+      "sentiment": "NEGATIVE",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "Done \u2014 you've been removed. Apologies for the interruption.",
+      "extracted_notes": "Prospect requested removal from mailing list due to lack of opt-in. Immediately added to suppression list and closed cadence."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 1.8
+  },
+  {
+    "prospect_id": "p_104",
+    "reply_text": "This is the third unsolicited email I've received from your company. Stop spamming me immediately. Who is your manager? I want to file a formal complaint.",
+    "expected_intent": "UNSUBSCRIBE",
+    "expected_escalate": true,
+    "predicted": {
+      "prospect_id": "p_104",
+      "inbound_message": "This is the third unsolicited email I've received from your company. Stop spamming me immediately. Who is your manager? I want to file a formal complaint.",
+      "intent": "UNSUBSCRIBE",
+      "sentiment": "NEGATIVE",
+      "escalate_to_human": true,
+      "escalation_reason": "Prospect is angry, threatening a formal complaint, and requesting manager contact. Brand risk requires human review.",
+      "suggested_reply": "I am so sorry for the frustration and the repeated emails. You have been immediately removed from all of our outreach lists. I'll also have our sales manager reach out directly to ensure this is handled properly.",
+      "extracted_notes": "URGENT: Prospect expressed strong anger and requested a manager. Immediate addition to global suppression list. Escalated to human rep."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 2.27
+  },
+  {
+    "prospect_id": "p_201",
+    "reply_text": "Thank you for your email. I am currently out of office until October 5th, 2026 with limited access to email. For urgent matters, please contact amit.kumar@apexfin.in.",
+    "expected_intent": "OUT_OF_OFFICE",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_201",
+      "inbound_message": "Thank you for your email. I am currently out of office until October 5th, 2026 with limited access to email. For urgent matters, please contact amit.kumar@apexfin.in.",
+      "intent": "OUT_OF_OFFICE",
+      "sentiment": "NEUTRAL",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "",
+      "extracted_notes": "Prospect is out of office until October 5th, 2026. Alternative contact provided: amit.kumar@apexfin.in. Snooze cadence until October 6th, 2026."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 1.57
+  },
+  {
+    "prospect_id": "p_101",
+    "reply_text": "This is intriguing. How does Turboscale handle multi-region Kubernetes clusters? We run EKS in us-east-1 and eu-west-1 with cross-region replication. Does your IAM integration support that topology?",
+    "expected_intent": "TECHNICAL_QUESTION",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_101",
+      "inbound_message": "This is intriguing. How does Turboscale handle multi-region Kubernetes clusters? We run EKS in us-east-1 and eu-west-1 with cross-region replication. Does your IAM integration support that topology?",
+      "intent": "TECHNICAL_QUESTION",
+      "sentiment": "POSITIVE",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "Great question! Yes, Turboscale natively supports multi-region EKS topologies across us-east-1, eu-west-1, and any other AWS region. Our IAM integration utilizes cross-account IAM roles with least-privilege trust policies so you maintain complete security boundary control without needing long-lived static credentials.\n\nWould you like me to send over our security and architecture whitepaper, or would a brief technical deep-dive call with one of our engineers be helpful?",
+      "extracted_notes": "Prospect is highly engaged and asking technical architecture questions regarding multi-region EKS (us-east-1, eu-west-1) and IAM integration. Positive sentiment, strong intent."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 2.11
+  },
+  {
+    "prospect_id": "p_301",
+    "reply_text": "Interesting. Tell me more.",
+    "expected_intent": "INTERESTED_BOOK_MEETING",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_301",
+      "inbound_message": "Interesting. Tell me more.",
+      "intent": "INTERESTED_BOOK_MEETING",
+      "sentiment": "POSITIVE",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "Glad to hear it! Turboscale AI helps engineering teams cut CI build times by up to 65% and eliminate idle AWS Kubernetes waste with zero code refactoring needed\u2014connecting in under 10 minutes.\n\nHere is my calendar if you'd like to grab a quick 15-minute walkthrough of how it fits into your stack: [CALENDAR_LINK]",
+      "extracted_notes": "Prospect expressed exploratory interest ('Interesting. Tell me more.'). Short exploratory interest classified as INTERESTED_BOOK_MEETING per rule #2. Provided value prop on CI build time reduction and zero-refactor AWS/K8s setup."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 2.1
+  },
+  {
+    "prospect_id": "p_304",
+    "reply_text": "The latency numbers are impressive, but we just signed a 12-month contract with Deepgram + our own WebSocket stack. Would be open to revisiting when our contract is up in August 2027.",
+    "expected_intent": "OBJECTION_COMPETITOR",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_304",
+      "inbound_message": "The latency numbers are impressive, but we just signed a 12-month contract with Deepgram + our own WebSocket stack. Would be open to revisiting when our contract is up in August 2027.",
+      "intent": "OBJECTION_COMPETITOR",
+      "sentiment": "NEUTRAL",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "That's completely understandable, and congrats on locking in the stack with Deepgram. Just a quick thought \u2014 while Deepgram handles the core audio processing, Turboscale focuses purely on cutting down the underlying infrastructure overhead and Docker build queues underneath your pipelines. Even with a fresh contract, teams often use us concurrently to stop idle dev clusters from bleeding cash.\n\nSince August 2027 is a ways out, would it make sense to connect briefly now to see how you're tracking compute efficiency under the new setup?",
+      "extracted_notes": "Prospect mentioned competitor/stack (Deepgram + custom WebSocket). Contract active for 12 months, expires August 2027. Applied TIE-BREAKING RULE 1 (Competitor trumps timing). Positive signal on latency numbers."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 2.21
+  },
+  {
+    "prospect_id": "p_401",
+    "reply_text": "Thanks for reaching out, but this isn't something we're looking to evaluate right now. Good luck with it.",
+    "expected_intent": "NOT_INTERESTED",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_401",
+      "inbound_message": "Thanks for reaching out, but this isn't something we're looking to evaluate right now. Good luck with it.",
+      "intent": "NOT_INTERESTED",
+      "sentiment": "NEUTRAL",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "Understood, appreciate you letting me know. Wishing you and your team the best.",
+      "extracted_notes": "Soft decline without a specific future revisit date. Classified as NOT_INTERESTED. Closing cadence."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 1.71
+  },
+  {
+    "prospect_id": "p_402",
+    "reply_text": "This looks like a solid product honestly, just not something we need given where we are right now. Appreciate you thinking of us though.",
+    "expected_intent": "NOT_INTERESTED",
+    "expected_escalate": false,
+    "predicted": {
+      "prospect_id": "p_402",
+      "inbound_message": "This looks like a solid product honestly, just not something we need given where we are right now. Appreciate you thinking of us though.",
+      "intent": "NOT_INTERESTED",
+      "sentiment": "NEUTRAL",
+      "escalate_to_human": false,
+      "escalation_reason": null,
+      "suggested_reply": "Understood, appreciate you letting me know. Wishing you and your team the best.",
+      "extracted_notes": "Soft decline without a future revisit date. Classified as NOT_INTERESTED per the tie-breaking rules. Cadence closed gracefully."
+    },
+    "intent_ok": true,
+    "escalate_ok": true,
+    "schema_errors": [],
+    "latency_s": 2.49
+  }
+]

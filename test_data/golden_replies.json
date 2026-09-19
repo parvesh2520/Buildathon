@@ -88,5 +88,24 @@
     "_expected_escalate": false,
     "prospect_id": "p_304",
     "reply_text": "The latency numbers are impressive, but we just signed a 12-month contract with Deepgram + our own WebSocket stack. Would be open to revisiting when our contract is up in August 2027."
+  },
+  {
+    "_test_id": "R11",
+    "_description": "Flat decline with polite tone — no unsubscribe demand",
+    "_expected_intent": "NOT_INTERESTED",
+    "_expected_sentiment": "NEUTRAL",
+    "_expected_escalate": false,
+    "prospect_id": "p_401",
+    "reply_text": "Thanks for reaching out, but this isn't something we're looking to evaluate right now. Good luck with it."
+  },
+  {
+    "_test_id": "R12",
+    "_description": "Positive-toned decline — sentiment does not override intent",
+    "_expected_intent": "NOT_INTERESTED",
+    "_expected_sentiment": "POSITIVE",
+    "_expected_escalate": false,
+    "prospect_id": "p_402",
+    "reply_text": "This looks like a solid product honestly, just not something we need given where we are right now. Appreciate you thinking of us though."
   }
 ]
+

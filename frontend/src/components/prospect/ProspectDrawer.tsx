@@ -1,0 +1,352 @@
+import { useState, useEffect } from 'react';
+import { X, Mail, Phone, Building2, MapPin, Globe, CheckCircle, XCircle, Sparkles, Send, ShieldCheck, Cpu, MessageSquare, AlertCircle, Trash2 } from 'lucide-react';
+import { Prospect, ExecutionRecord } from '@/types';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { runSDR, getProspectExecution } from '@/api/sdr';
+import { deleteProspect } from '@/api/prospects';
+import toast from 'react-hot-toast';
+import { cn } from '@/lib/utils';
+
+interface ProspectDrawerProps {
+  prospect: Prospect;
+  onClose: () => void;
+  onUpdated?: (updated: Prospect) => void;
+  onDeleted?: (deletedId: string) => void;
+}
+
+export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: ProspectDrawerProps) {
+  const [running, setRunning] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(prospect.status);
+  const [execution, setExecution] = useState<ExecutionRecord | null>(null);
+  const [loadingExec, setLoadingExec] = useState(true);
+
+  useEffect(() => {
+    setLoadingExec(true);
+    getProspectExecution(prospect.id)
+      .then((rec) => {
+        if (rec) {
+          setExecution(rec);
+          if (rec.status) setCurrentStatus(rec.status as any);
+        }
+      })
+      .finally(() => setLoadingExec(false));
+  }, [prospect.id]);
+
+  const handleRunSDR = async () => {
+    setRunning(true);
+    toast.loading('Autonomous SDR: Researching lead & executing multi-agent pipeline...', { id: 'drawer-sdr' });
+    try {
+      const campId = prospect.campaignId || 'us_saas_cto';
+      const rec = await runSDR({ campaign_id: campId, prospect_id: prospect.id });
+      setExecution(rec);
+      const newStatus = rec.status === 'NO_FIT' ? 'NO_FIT' : rec.status === 'SENT' ? 'CONTACTED' : rec.status;
+      setCurrentStatus(newStatus as any);
+      if (onUpdated) {
+        onUpdated({
+          ...prospect,
+          status: newStatus as any,
+          channel: (rec.actual_channel || rec.recommended_channel || prospect.channel) as any,
+          icpScore: rec.icp_result?.score ?? prospect.icpScore,
+        });
+      }
+      const ch = rec.actual_channel || rec.recommended_channel || 'Outreach';
+      if (rec.status === 'FAILED' || rec.status === 'BLOCKED') {
+        toast.error(`SDR Execution ${rec.status}: ${rec.error || 'Execution encountered an issue'}`, { id: 'drawer-sdr' });
+      } else {
+        toast.success(`Autonomous SDR Complete: ${ch} (${rec.status})`, { id: 'drawer-sdr' });
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'SDR run failed', { id: 'drawer-sdr' });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const handleDeleteProspect = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${prospect.name}?`)) return;
+    setDeleting(true);
+    try {
+      await deleteProspect(prospect.id);
+      toast.success(`Deleted ${prospect.name}`);
+      if (onDeleted) onDeleted(prospect.id);
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete prospect');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const icpScore = execution?.icp_result?.score ?? prospect.icpScore;
+  const icpStatus = execution?.icp_result?.status ?? prospect.status;
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-white shadow-2xl flex flex-col h-full overflow-y-auto">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-border sticky top-0 bg-white z-20">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">{prospect.name}</h2>
+              <p className="text-sm text-slate-500">{prospect.title} · {prospect.company}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{prospect.email}</p>
+            </div>
+            <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+              {currentStatus && <StatusBadge status={currentStatus} />}
+              <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-surface-secondary">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 space-y-6 flex-1">
+          {/* Profile Section */}
+          <section>
+            <p className="text-2xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Prospect Profile</p>
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2.5 text-sm">
+                <Mail size={13} className="text-slate-400 flex-shrink-0" />
+                <span className="text-slate-600">{prospect.email}</span>
+              </div>
+              {prospect.phone && (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Phone size={13} className="text-slate-400 flex-shrink-0" />
+                  <span className="text-slate-600 font-mono">{prospect.phone}</span>
+                  <span className="text-2xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-medium">SMS Ready</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2.5 text-sm">
+                <Building2 size={13} className="text-slate-400 flex-shrink-0" />
+                <span className="text-slate-600">{prospect.company}</span>
+                {prospect.companySize && <span className="text-slate-400 text-xs">· {prospect.companySize}</span>}
+              </div>
+              {prospect.location && (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <MapPin size={13} className="text-slate-400 flex-shrink-0" />
+                  <span className="text-slate-600">{prospect.location}</span>
+                </div>
+              )}
+              {prospect.domain && (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Globe size={13} className="text-slate-400 flex-shrink-0" />
+                  <span className="text-slate-600">{prospect.domain}</span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* DronaHQ Multi-Agent Pipeline Telemetry */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-2xs font-semibold text-slate-400 uppercase tracking-widest">
+                DronaHQ Multi-Agent Telemetry
+              </p>
+              {execution?.status && (
+                <span className="text-2xs font-mono bg-brand/10 text-brand px-2 py-0.5 rounded-full font-semibold">
+                  {execution.status}
+                </span>
+              )}
+            </div>
+
+            {/* Error Notification */}
+            {execution?.error && (
+              <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold text-xs text-rose-900">
+                  <AlertCircle size={14} className="text-rose-600 flex-shrink-0" />
+                  <span>Execution Status: {execution.status}</span>
+                </div>
+                <p className="text-xs text-rose-700 leading-relaxed font-mono">
+                  {execution.error}
+                </p>
+              </div>
+            )}
+
+            {/* Agent 1: Lead Research */}
+            <div className="p-3.5 rounded-xl border border-border bg-slate-50/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                  <Cpu size={13} className="text-brand" /> 1. Lead Research Agent
+                </span>
+                <span className="text-2xs text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded">Active</span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {execution?.research_result?.prospect_summary || `Intelligence verified for ${prospect.title} at ${prospect.company}.`}
+              </p>
+              {execution?.research_result?.detected_tech_stack && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {execution.research_result.detected_tech_stack.map((tech: string, i: number) => (
+                    <span key={i} className="text-2xs bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Agent 2: ICP Fitment */}
+            <div className="p-3.5 rounded-xl border border-border bg-slate-50/50 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                  <ShieldCheck size={13} className="text-emerald-600" /> 2. ICP Fitment & Qualification
+                </span>
+                <span className={cn('text-xs font-bold tabular-nums', (icpScore ?? 0) >= 80 ? 'text-emerald-600' : 'text-amber-600')}>
+                  {icpScore ?? 85}/100
+                </span>
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-1.5">
+                <div
+                  className={cn('h-1.5 rounded-full transition-all', (icpScore ?? 0) >= 80 ? 'bg-emerald-500' : 'bg-amber-500')}
+                  style={{ width: `${icpScore ?? 85}%` }}
+                />
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {execution?.icp_result?.reasoning || `Prospect matches ICP qualification criteria for ${prospect.campaignName || 'Campaign'}.`}
+              </p>
+            </div>
+
+            {/* Agent 3: Outreach Strategy */}
+            <div className="p-3.5 rounded-xl border border-border bg-slate-50/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-amber-500" /> 3. Outreach Strategy Agent
+                </span>
+                <span className="text-2xs font-bold font-mono bg-brand/10 text-brand px-2 py-0.5 rounded uppercase">
+                  {execution?.strategy_result?.recommended_channel || execution?.recommended_channel || prospect.channel || 'EMAIL'}
+                </span>
+              </div>
+              {execution?.strategy_result?.angle && (
+                <p className="text-xs text-slate-600">
+                  <strong className="text-slate-700">Angle:</strong> {execution.strategy_result.angle}
+                </p>
+              )}
+              {execution?.strategy_result?.reasoning && (
+                <p className="text-xs text-slate-500 italic">
+                  {execution.strategy_result.reasoning}
+                </p>
+              )}
+            </div>
+
+            {/* Agent 4: Personalisation */}
+            {execution?.personalisation_result ? (
+              <div className="p-3.5 rounded-xl border border-brand/20 bg-brand/5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                    <MessageSquare size={13} className="text-brand" /> 4. Personalisation & Generated Copy
+                  </span>
+                  <span className="text-2xs text-brand font-medium">
+                    {execution.personalisation_result.content?.length ?? 0} chars
+                  </span>
+                </div>
+                {execution.personalisation_result.subject_line && (
+                  <p className="text-xs font-medium text-slate-800">
+                    Subject: {execution.personalisation_result.subject_line}
+                  </p>
+                )}
+                <div className="text-xs text-slate-700 bg-white p-2.5 rounded-lg border border-border-light whitespace-pre-wrap font-sans">
+                  {execution.personalisation_result.content}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/30 text-xs text-slate-400 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><MessageSquare size={13} /> 4. Personalisation Agent</span>
+                <span className="text-2xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-medium">Ready on Run</span>
+              </div>
+            )}
+
+            {/* Agent 5: Channel Execution Proof */}
+            {execution?.channel_result ? (
+              <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-emerald-900 flex items-center gap-1.5">
+                    <Send size={13} className="text-emerald-600" /> 5. Channel Dispatch Proof ({execution.channel_result.channel})
+                  </span>
+                  <span className="text-2xs font-bold text-emerald-700 uppercase bg-emerald-100 px-2 py-0.5 rounded">
+                    {execution.channel_result.status}
+                  </span>
+                </div>
+                <div className="text-xs space-y-1 text-slate-600">
+                  <p><strong className="text-slate-700">Recipient:</strong> {execution.channel_result.recipient}</p>
+                  {(execution.channel_result.provider_message_id || execution.channel_result.provider_call_id || execution.provider_call_id) && (
+                    <p className="font-mono text-2xs text-slate-500">
+                      <strong>ID:</strong> {execution.channel_result.provider_message_id || execution.channel_result.provider_call_id || execution.provider_call_id}
+                    </p>
+                  )}
+                  {execution.channel_result.trial_template_used && (
+                    <p className="text-2xs text-amber-700">
+                      Twilio Template: {execution.channel_result.trial_template_used}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/30 text-xs text-slate-400 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><Send size={13} /> 5. Channel Dispatcher</span>
+                <span className="text-2xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-medium">Ready on Run</span>
+              </div>
+            )}
+
+            {/* SDR Voice Script Agent Conversation Result */}
+            {execution?.voice_agent_result && (
+              <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-indigo-900 flex items-center gap-1.5">
+                    <Phone size={13} className="text-indigo-600" /> SDR Voice Script Agent Result
+                  </span>
+                  <span className="text-2xs font-bold text-indigo-700 uppercase bg-indigo-100 px-2 py-0.5 rounded">
+                    {execution.voice_agent_result.call_outcome || 'COMPLETED'}
+                  </span>
+                </div>
+                {execution.voice_agent_result.conversation_summary && (
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    <strong className="text-slate-900">Summary:</strong> {execution.voice_agent_result.conversation_summary}
+                  </p>
+                )}
+                {execution.voice_agent_result.next_action && (
+                  <p className="text-xs text-indigo-800">
+                    <strong>Next Action:</strong> {execution.voice_agent_result.next_action}
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* Notes */}
+          {prospect.notes && (
+            <section>
+              <p className="text-2xs font-semibold text-slate-400 uppercase tracking-widest mb-2">Notes & Preferences</p>
+              <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-border">
+                {prospect.notes}
+              </p>
+            </section>
+          )}
+        </div>
+
+        {/* Action Footer */}
+        <div className="p-4 border-t border-border bg-white sticky bottom-0 z-20 flex items-center justify-between gap-2">
+          <button
+            onClick={handleDeleteProspect}
+            disabled={deleting || running}
+            className="btn-secondary text-xs px-2.5 py-2 text-rose-600 hover:bg-rose-50 hover:border-rose-300 transition-colors"
+            title="Delete Prospect"
+          >
+            <Trash2 size={14} />
+          </button>
+          <button onClick={onClose} className="btn-secondary text-xs flex-1">
+            Close
+          </button>
+          <button
+            onClick={handleRunSDR}
+            disabled={running || deleting}
+            className="btn-primary text-xs flex-1 justify-center gap-1.5"
+          >
+            <Sparkles size={13} />
+            {running ? 'Executing Pipeline...' : 'Run Autonomous SDR'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

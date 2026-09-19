@@ -1,0 +1,830 @@
+[
+  {
+    "execution_id": "7d8a520c-e60e-48bb-ac1e-fb78ba1649e3",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "460aae17-61e1-4b29-bc26-6b0caf679970",
+    "status": "FAILED",
+    "current_agent": "ORCHESTRATOR",
+    "channel": null,
+    "recommended_channel": null,
+    "actual_channel": null,
+    "action_type": null,
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:30:27.290916+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T17:30:27.290916+00:00",
+    "error": "Prospect '460aae17-61e1-4b29-bc26-6b0caf679970' not found",
+    "research_result": null,
+    "icp_result": null,
+    "strategy_result": null,
+    "personalisation_result": null,
+    "channel_result": null,
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "265dd978-0ebb-419c-8c69-d2eaf254094c",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "90e0b2e2-6300-4241-b58c-caee44e23ec1",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": null,
+    "recommended_channel": "EMAIL",
+    "actual_channel": "EMAIL",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:31:02.449441+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T17:31:29.419757+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "Test Persistence Lead",
+      "prospect_summary": "The Engineering Director at Acme Corp, which has a workforce of 250 employees, is likely responsible for overseeing the engineering initiatives and managing technical teams. Acme Corp operates in an industry that requires significant engineering resources to drive innovation and reliability in their products or services.",
+      "verified_domain": "acmecorp.com",
+      "detected_tech_stack": [],
+      "personalisation_hooks": []
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 70,
+      "reasoning": "The prospect is an Engineering Director at a company within the target employee range, which gives a reasonable score. However, the lack of information regarding technology utilized and operational pain points leads to a lower overall fit, resulting in a review status.",
+      "matched_criteria": [
+        "Role Fit: Engineering Director aligns with decision maker level",
+        "Company Fit: 250 employees fits within the 50-500 range"
+      ],
+      "unmatched_criteria": [
+        "Tech Stack Fit: No detected technologies to validate stack alignment",
+        "Pain Point Alignment: No clear operational need mentioned"
+      ]
+    },
+    "strategy_result": {
+      "prospect_id": "90e0b2e2-6300-4241-b58c-caee44e23ec1",
+      "recommended_channel": "EMAIL",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Leveraging cutting-edge CI/CD and Kubernetes optimization tools to streamline engineering workflows at Acme Corp.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Emphasize the benefits of efficiency and innovation in engineering processes that Turboscale AI brings. Avoid overly technical jargon, focusing instead on strategic advantages.",
+      "suggested_wait_days": 0,
+      "reasoning": "Email is the primary outreach channel for US tech leaders, and the prospect fits the ICP criteria for outreach. The angle focuses on their pain points in managing engineering initiatives, aligning with the campaign's goals."
+    },
+    "personalisation_result": {
+      "prospect_id": "90e0b2e2-6300-4241-b58c-caee44e23ec1",
+      "channel": "EMAIL",
+      "subject_line": "Accelerating developer velocity at Acme Corp",
+      "content": "Hi Test,\n\nI noticed your leadership as Engineering Director at Acme Corp. At high-growth tech companies, engineering bottlenecks and repetitive SDLC tasks often slow down release cadence.\n\nOur Autonomous SDR and developer automation platform helps teams ship 40% faster without adding headcount.\n\nDo you have 10 minutes next Tuesday or Thursday for a brief introductory conversation?\n\nBest regards,\nAutonomous SDR Team",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "EMAIL",
+      "status": "SENT",
+      "provider_message_id": "email_0ccf8e10f78b",
+      "recipient": "parvesh2520@gmail.com",
+      "error": null,
+      "subject": "Accelerating developer velocity at Acme Corp",
+      "timestamp": "2026-09-19T17:31:24.685946+00:00"
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "802263c7-9836-4275-9abf-6850ea829e40",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "8a3248f9-a135-48bf-bfd7-34a9a1b594ca",
+    "status": "FAILED",
+    "current_agent": "ORCHESTRATOR",
+    "channel": null,
+    "recommended_channel": null,
+    "actual_channel": null,
+    "action_type": null,
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:31:44.862537+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T17:31:44.862537+00:00",
+    "error": "Prospect '8a3248f9-a135-48bf-bfd7-34a9a1b594ca' not found",
+    "research_result": null,
+    "icp_result": null,
+    "strategy_result": null,
+    "personalisation_result": null,
+    "channel_result": null,
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "46e36b6a-520d-43e8-a8f0-256f9aa45a74",
+    "campaign_id": "india_bfsi_cio",
+    "prospect_id": "parvesh_sms",
+    "status": "BUSY",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": null,
+    "recommended_channel": "SMS",
+    "actual_channel": "SMS",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": "CAtest12345",
+    "started_at": "2026-09-19T17:31:50.438973+00:00",
+    "answered_at": "2026-09-19T17:41:11.154890+00:00",
+    "ended_at": "2026-09-19T17:41:54.320776+00:00",
+    "duration": 45,
+    "call_outcome": "COMPLETED",
+    "completed_at": "2026-09-19T17:41:54.320776+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "parvesh_sms",
+      "prospect_summary": "Parvesh Kumar (SMS Test) is Chief Information Officer (CIO) at FinTech Wave Bank.",
+      "verified_domain": "fintechwave.in",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as Chief Information Officer (CIO)",
+        "Engineering automation at FinTech Wave Bank"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 90,
+      "reasoning": "Prospect role 'Chief Information Officer (CIO)' at 'FinTech Wave Bank' matches ICP qualification criteria.",
+      "matched_criteria": [
+        "Decision maker role",
+        "Target company size",
+        "Technical domain"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "parvesh_sms",
+      "recommended_channel": "SMS",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Streamline engineering automation at FinTech Wave Bank to enhance CI/CD processes, leveraging AI-driven optimization.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Emphasize how our solutions can improve CI/CD efficiencies and align with current trends in engineering automation. Avoid overly technical jargon, keep it concise and focused on business benefits.",
+      "suggested_wait_days": 0,
+      "reasoning": "The prospect is a CIO at a BFSI company and has a preference for mobile SMS communication. This aligns with the outreach strategy and enables a quick follow-up regarding CI/CD solutions, which is relevant to his role."
+    },
+    "personalisation_result": {
+      "prospect_id": "parvesh_sms",
+      "channel": "SMS",
+      "subject_line": null,
+      "content": "Hi Parvesh, saw your work at FinTech Wave Bank. We help teams ship 40% faster with AI. Open to a 5-min chat next week? - SDR",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "SMS",
+      "status": "SENT",
+      "provider_message_id": "SM1828dfeacb7770a83363bb7deb346738",
+      "recipient": "+917419045750",
+      "content": "Hi Parvesh, saw your work at FinTech Wave Bank. We help teams ship 40% faster with AI. Open to a 5-min chat next week? - SDR",
+      "trial_template_used": "sms_appointment_reminders",
+      "error": null
+    },
+    "voice_agent_result": {
+      "conversation_summary": "Discussed CI/CD pipeline automation; prospect agreed to demo.",
+      "call_outcome": "COMPLETED",
+      "interested": true,
+      "objections": [
+        "Existing budget allocated until Q4"
+      ],
+      "follow_up_required": true,
+      "next_action": "Send calendar link for Tuesday"
+    }
+  },
+  {
+    "execution_id": "f2a72291-3813-4a44-960d-9513cb871ebe",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "62057bdb-3717-4716-853c-74522a99f121",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": null,
+    "recommended_channel": "EMAIL",
+    "actual_channel": "EMAIL",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:32:23.080573+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T17:32:46.050626+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "62057bdb-3717-4716-853c-74522a99f121",
+      "prospect_summary": "Parvesh is CTO at XYZ.",
+      "verified_domain": "xyz.com",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as CTO",
+        "Engineering automation at XYZ"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 75,
+      "reasoning": "Parvesh is the CTO of a US-based SaaS company with 120 employees, which fits the target demographic perfectly. The detected tech stack indicates a strong alignment with the campaign objectives.",
+      "matched_criteria": [
+        "Decision maker level: CTO",
+        "Company size: 120 employees fits within the 50-500 range",
+        "Geographic location: US-based",
+        "Tech stack: Detected technologies relevant to the campaign"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "62057bdb-3717-4716-853c-74522a99f121",
+      "recommended_channel": "EMAIL",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Optimize CI/CD processes at XYZ to enhance DevOps efficiency and scale faster in a competitive landscape.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Focus on Parvesh's role as CTO and highlight how Turboscale AI can drive automation and efficiency specifically in CI/CD for XYZ. Avoid generic descriptions; tailor the message to reflect their specific tech stack and leadership role.",
+      "suggested_wait_days": 0,
+      "reasoning": "EMAIL is the primary outreach channel for US Tech Leaders, and it aligns with the prospect's position as CTO in a SaaS company. The angle directly connects their pain point to the benefits of CI/CD optimization offered by Turboscale AI."
+    },
+    "personalisation_result": {
+      "prospect_id": "62057bdb-3717-4716-853c-74522a99f121",
+      "channel": "EMAIL",
+      "subject_line": "Accelerating developer velocity at XYZ",
+      "content": "Hi Parvesh,\n\nI noticed your leadership as CTO at XYZ. At high-growth tech companies, engineering bottlenecks and repetitive SDLC tasks often slow down release cadence.\n\nOur Autonomous SDR and developer automation platform helps teams ship 40% faster without adding headcount.\n\nDo you have 10 minutes next Tuesday or Thursday for a brief introductory conversation?\n\nBest regards,\nAutonomous SDR Team",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "EMAIL",
+      "status": "SENT",
+      "provider_message_id": "email_3963c62d8206",
+      "recipient": "parvesh2520@gmail.com",
+      "error": null,
+      "subject": "Accelerating developer velocity at XYZ",
+      "timestamp": "2026-09-19T17:32:41.734464+00:00"
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "972926d4-12b5-45ac-873b-ac2f46145e03",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "parvesh_email",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": null,
+    "recommended_channel": "EMAIL",
+    "actual_channel": "EMAIL",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:32:49.142988+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T17:33:15.381802+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "Parvesh Kumar - cloudscale.io",
+      "prospect_summary": "Parvesh Kumar is the CTO of CloudScale Technologies, a company based in San Francisco, CA, with a workforce of around 150 employees. The company specializes in optimizing cloud infrastructure solutions, focusing on enhancing developer velocity and efficiency within software development processes.",
+      "verified_domain": "cloudscale.io",
+      "detected_tech_stack": [],
+      "personalisation_hooks": []
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 90,
+      "reasoning": "Prospect role 'CTO' at 'CloudScale Technologies' matches ICP qualification criteria.",
+      "matched_criteria": [
+        "Decision maker role",
+        "Target company size",
+        "Technical domain"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "parvesh_email",
+      "recommended_channel": "EMAIL",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Highlight how Turboscale AI can significantly enhance developer velocity and optimize processes at CloudScale Technologies, aligning with their focus on cloud infrastructure solutions.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Emphasize the benefits of CI/CD and Kubernetes optimization to improve efficiency in development processes. Reference specific case studies that demonstrate success in similar companies. Avoid overly technical jargon, and keep the message focused on outcomes and value proposition.",
+      "suggested_wait_days": 0,
+      "reasoning": "Email is the primary channel for US tech leaders, and it\u2019s the preferred contact method indicated for Parvesh. The angle directly connects his interest in developer velocity to Turboscale AI\u2019s offerings."
+    },
+    "personalisation_result": {
+      "prospect_id": "parvesh_email",
+      "channel": "EMAIL",
+      "subject_line": "Accelerating developer velocity at CloudScale Technologies",
+      "content": "Hi Parvesh,\n\nI noticed your leadership as CTO at CloudScale Technologies. At high-growth tech companies, engineering bottlenecks and repetitive SDLC tasks often slow down release cadence.\n\nOur Autonomous SDR and developer automation platform helps teams ship 40% faster without adding headcount.\n\nDo you have 10 minutes next Tuesday or Thursday for a brief introductory conversation?\n\nBest regards,\nAutonomous SDR Team",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "EMAIL",
+      "status": "SENT",
+      "provider_message_id": "email_4518cdd2139f",
+      "recipient": "parvesh2520@gmail.com",
+      "error": null,
+      "subject": "Accelerating developer velocity at CloudScale Technologies",
+      "timestamp": "2026-09-19T17:33:10.715575+00:00"
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "30ffccff-f59f-4011-8d84-f138c5cf540b",
+    "campaign_id": "india_bfsi_cio",
+    "prospect_id": "parvesh_sms",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": null,
+    "recommended_channel": "SMS",
+    "actual_channel": "SMS",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:33:15.383841+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T17:33:34.005683+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "parvesh_sms",
+      "prospect_summary": "Parvesh Kumar (SMS Test) is Chief Information Officer (CIO) at FinTech Wave Bank.",
+      "verified_domain": "fintechwave.in",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as Chief Information Officer (CIO)",
+        "Engineering automation at FinTech Wave Bank"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 90,
+      "reasoning": "Prospect role 'Chief Information Officer (CIO)' at 'FinTech Wave Bank' matches ICP qualification criteria.",
+      "matched_criteria": [
+        "Decision maker role",
+        "Target company size",
+        "Technical domain"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "parvesh_sms",
+      "recommended_channel": "SMS",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Discuss how FinShield AI can streamline lending processes and boost fraud detection for FinTech Wave Bank.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Focus on the benefits of RBI-compliance and operational efficiency that FinShield AI brings, while acknowledging Parvesh's leadership role in engineering automation.",
+      "suggested_wait_days": 0,
+      "reasoning": "Given Parvesh's position as CIO at a BFSI company and his preference for SMS communication, reaching out via SMS aligns well with his communication style. The angle focuses on relevant pain points in the fintech sector."
+    },
+    "personalisation_result": {
+      "prospect_id": "parvesh_sms",
+      "channel": "SMS",
+      "subject_line": null,
+      "content": "Hi Parvesh, saw your work at FinTech Wave Bank. We help teams ship 40% faster with AI. Open to a 5-min chat next week? - SDR",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "SMS",
+      "status": "SENT",
+      "provider_message_id": "SMc86f5828471405768e08d7b63f7b4e09",
+      "recipient": "+917419045750",
+      "content": "Hi Parvesh, saw your work at FinTech Wave Bank. We help teams ship 40% faster with AI. Open to a 5-min chat next week? - SDR",
+      "trial_template_used": "sms_appointment_reminders",
+      "error": null
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "544abfab-1419-4338-ad9b-8d4c846b7647",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "90e0b2e2-6300-4241-b58c-caee44e23ec1",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": null,
+    "recommended_channel": "EMAIL",
+    "actual_channel": "EMAIL",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:33:58.295625+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T17:34:23.318579+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "Test Persistence Lead",
+      "prospect_summary": "Test Persistence Lead is the Engineering Director at Acme Corp, a company with approximately 250 employees. Acme Corp is likely involved in engineering or technology-driven projects, given the leadership role in engineering.",
+      "verified_domain": "acmecorp.com",
+      "detected_tech_stack": [],
+      "personalisation_hooks": []
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 60,
+      "reasoning": "The prospect holds a decision-making role as an Engineering Director at a US-based company with around 250 employees, which aligns well with the campaign criteria. However, there is no information on the tech stack used by Acme Corp, and there are no clear operational needs outlined, which affects the overall fit score.",
+      "matched_criteria": [
+        "Role Fit",
+        "Company Fit"
+      ],
+      "unmatched_criteria": [
+        "Tech Stack Fit",
+        "Pain Point Alignment"
+      ]
+    },
+    "strategy_result": {
+      "prospect_id": "90e0b2e2-6300-4241-b58c-caee44e23ec1",
+      "recommended_channel": "EMAIL",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Highlight how Turboscale AI can enhance deployment speed and performance for Acme Corp's engineering projects, optimizing their CI/CD processes.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Focus on the benefits of Turboscale AI in improving CI/CD and Kubernetes efficiency. Cite relevant case studies and avoid overly technical jargon to ensure clarity for a non-technical audience.",
+      "suggested_wait_days": 0,
+      "reasoning": "Email is the primary channel for US Tech Leaders, and the prospect is in a suitable position to understand and appreciate executive-level discussions on efficiency and optimization."
+    },
+    "personalisation_result": {
+      "prospect_id": "90e0b2e2-6300-4241-b58c-caee44e23ec1",
+      "channel": "EMAIL",
+      "subject_line": "Accelerating developer velocity at Acme Corp",
+      "content": "Hi Test,\n\nI noticed your leadership as Engineering Director at Acme Corp. At high-growth tech companies, engineering bottlenecks and repetitive SDLC tasks often slow down release cadence.\n\nOur Autonomous SDR and developer automation platform helps teams ship 40% faster without adding headcount.\n\nDo you have 10 minutes next Tuesday or Thursday for a brief introductory conversation?\n\nBest regards,\nAutonomous SDR Team",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "EMAIL",
+      "status": "SENT",
+      "provider_message_id": "email_d88f6b101e2a",
+      "recipient": "parvesh2520@gmail.com",
+      "error": null,
+      "subject": "Accelerating developer velocity at Acme Corp",
+      "timestamp": "2026-09-19T17:34:18.754992+00:00"
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "7d85bdb1-363e-4c33-a4a7-fb9e6e7c4114",
+    "campaign_id": "india_bfsi_cio",
+    "prospect_id": "parvesh_voice",
+    "status": "NO_FIT",
+    "current_agent": "ICP_FITMENT",
+    "channel": null,
+    "recommended_channel": null,
+    "actual_channel": null,
+    "action_type": null,
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:43:35.737195+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T17:43:45.934727+00:00",
+    "error": "Parvesh Kumar is the VP of Engineering, which does not match the targeted CIO/CISO role for BFSI companies. Additionally, NexTech Global has 650 employees, falling short of the minimum employee requirement of 1000+ for the campaign.",
+    "research_result": {
+      "prospect_id": "parvesh_voice",
+      "prospect_summary": "Parvesh Kumar (Voice Call Test) is VP of Engineering at NexTech Global.",
+      "verified_domain": "nextech.io",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as VP of Engineering",
+        "Engineering automation at NexTech Global"
+      ]
+    },
+    "icp_result": {
+      "status": "NO_FIT",
+      "score": 40,
+      "reasoning": "Parvesh Kumar is the VP of Engineering, which does not match the targeted CIO/CISO role for BFSI companies. Additionally, NexTech Global has 650 employees, falling short of the minimum employee requirement of 1000+ for the campaign.",
+      "matched_criteria": [],
+      "unmatched_criteria": [
+        "Role does not align with targeted CIO/CISO role",
+        "Company size does not meet the minimum employee requirement of 1000+"
+      ]
+    },
+    "strategy_result": {},
+    "personalisation_result": {},
+    "channel_result": null,
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "4696b266-ae8d-4ff5-823f-4f0bcac2e59e",
+    "campaign_id": "india_bfsi_cio",
+    "prospect_id": "parvesh_voice",
+    "status": "RUNNING",
+    "current_agent": "LEAD_RESEARCH",
+    "channel": null,
+    "recommended_channel": null,
+    "actual_channel": null,
+    "action_type": null,
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:44:48.716534+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": null,
+    "error": null,
+    "research_result": null,
+    "icp_result": null,
+    "strategy_result": null,
+    "personalisation_result": null,
+    "channel_result": null,
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "7c953214-e7a6-4ce4-bc30-23ca883372e7",
+    "campaign_id": "india_bfsi_cio",
+    "prospect_id": "parvesh_voice",
+    "status": "RUNNING",
+    "current_agent": "LEAD_RESEARCH",
+    "channel": null,
+    "recommended_channel": null,
+    "actual_channel": null,
+    "action_type": null,
+    "provider_call_id": null,
+    "started_at": "2026-09-19T17:45:10.900233+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": null,
+    "error": null,
+    "research_result": null,
+    "icp_result": null,
+    "strategy_result": null,
+    "personalisation_result": null,
+    "channel_result": null,
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "c0b61c5b-847d-4c1d-b741-fceec76ed089",
+    "campaign_id": "india_bfsi_cio",
+    "prospect_id": "parvesh_voice",
+    "status": "INITIATING",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": "PHONE",
+    "recommended_channel": "PHONE",
+    "actual_channel": "PHONE",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": "CA33f3329ebcbf2b6d6312b2f30ff78427",
+    "started_at": "2026-09-19T17:46:19.113436+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T17:46:19.118073+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "parvesh_voice",
+      "prospect_summary": "Parvesh Kumar (Voice Call Test) is Chief Information Officer (CIO) at FinTech Wave Bank.",
+      "verified_domain": "fintechwave.in",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as Chief Information Officer (CIO)",
+        "Engineering automation at FinTech Wave Bank"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 80,
+      "reasoning": "The prospect fits well within the ICP criteria for the India BFSI CIO campaign, as they hold a decision-making role in a qualifying BFSI company with sufficient employee headcount. Their technology stack and operational needs align closely with the campaign's objectives, supporting a high fit score.",
+      "matched_criteria": [
+        "Role Fit: CIO at BFSI enterprise",
+        "Company Fit: 1,200 employees, located in India",
+        "Tech Stack Fit: Uses Cloud Infrastructure, CI/CD, and DevOps relevant to the offering",
+        "Pain Point Alignment: As CIO, has operational needs related to engineering automation"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "parvesh_voice",
+      "recommended_channel": "PHONE",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Discuss how our RBI-compliant solutions can streamline lending processes and enhance fraud mitigation at FinTech Wave Bank.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Highlight FinShield AI's capabilities in ensuring compliance and reducing fraud risks. Avoid overly technical jargon and focus on business outcomes.",
+      "suggested_wait_days": 0,
+      "reasoning": "PHONE is the optimal channel for outreach as the prospect is a CIO, allowing for a direct executive briefing which aligns with their leadership role in a BFSI enterprise."
+    },
+    "personalisation_result": {
+      "prospect_id": "parvesh_voice",
+      "channel": "PHONE",
+      "subject_line": "Introductory Call - FinTech Wave Bank",
+      "content": "SDR Voice Bridge Script: Hello Parvesh, calling regarding AI developer acceleration at FinTech Wave Bank.",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "PHONE",
+      "status": "INITIATING",
+      "recipient": "+917419045750",
+      "provider_call_id": "CA33f3329ebcbf2b6d6312b2f30ff78427",
+      "provider": "twilio",
+      "error": null,
+      "voice_agent_connected": true,
+      "agent_response": {
+        "status": "READY",
+        "context": {
+          "execution_id": "c0b61c5b-847d-4c1d-b741-fceec76ed089",
+          "prospect": {
+            "prospect_id": "parvesh_voice",
+            "name": "Parvesh Kumar (Voice Call Test)",
+            "title": "Chief Information Officer (CIO)",
+            "company": "FinTech Wave Bank",
+            "phone": "+917419045750",
+            "email": "parvesh2520@gmail.com",
+            "location": "Mumbai, India",
+            "company_size": "1,200 employees",
+            "domain": "fintechwave.in",
+            "linkedin_url": null,
+            "notes": "CIO at BFSI enterprise. Outreach Strategy Agent selected PHONE call for executive briefing. Connects directly to SDR Voice Script Agent."
+          },
+          "campaign": {
+            "campaign_id": "india_bfsi_cio",
+            "campaign_name": "India BFSI CIOs",
+            "icp": "CIO / IT Director at BFSI companies, 1000+ employees, India",
+            "product": "Targeting CIOs at Indian BFSI enterprises"
+          },
+          "strategy": {
+            "recommended_channel": "PHONE",
+            "action_type": "NEW_OUTREACH",
+            "angle": "Discuss how our RBI-compliant solutions can streamline lending processes and enhance fraud mitigation at FinTech Wave Bank.",
+            "tone": "EXECUTIVE",
+            "instructions_for_copywriter": "Highlight FinShield AI's capabilities in ensuring compliance and reducing fraud risks. Avoid overly technical jargon and focus on business outcomes.",
+            "reasoning": "PHONE is the optimal channel for outreach as the prospect is a CIO, allowing for a direct executive briefing which aligns with their leadership role in a BFSI enterprise."
+          },
+          "research": {
+            "prospect_id": "parvesh_voice",
+            "prospect_summary": "Parvesh Kumar (Voice Call Test) is Chief Information Officer (CIO) at FinTech Wave Bank.",
+            "verified_domain": "fintechwave.in",
+            "detected_tech_stack": [
+              "Cloud Infrastructure",
+              "CI/CD",
+              "DevOps"
+            ],
+            "personalisation_hooks": [
+              "Executive leadership as Chief Information Officer (CIO)",
+              "Engineering automation at FinTech Wave Bank"
+            ]
+          },
+          "icp_qualification": {
+            "status": "FIT",
+            "score": 80,
+            "reasoning": "The prospect fits well within the ICP criteria for the India BFSI CIO campaign, as they hold a decision-making role in a qualifying BFSI company with sufficient employee headcount. Their technology stack and operational needs align closely with the campaign's objectives, supporting a high fit score.",
+            "matched_criteria": [
+              "Role Fit: CIO at BFSI enterprise",
+              "Company Fit: 1,200 employees, located in India",
+              "Tech Stack Fit: Uses Cloud Infrastructure, CI/CD, and DevOps relevant to the offering",
+              "Pain Point Alignment: As CIO, has operational needs related to engineering automation"
+            ],
+            "unmatched_criteria": []
+          }
+        },
+        "greeting": "Hello Parvesh Kumar (Voice Call Test), this is an outreach call regarding India BFSI CIOs."
+      }
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "00e8bff0-9990-4228-9b33-26030184eebd",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "8fefd36a-6351-4232-a6b1-9b6c3ed16231",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": "EMAIL",
+    "recommended_channel": "EMAIL",
+    "actual_channel": "EMAIL",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-19T18:10:46.838049+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T18:11:31.920438+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "Alex Rivera",
+      "prospect_summary": "Alex Rivera is the Lead Technical SDR at Turboscale AI, a company specializing in cloud compute optimization and CI/CD acceleration for B2B SaaS engineering teams. With a focus on modernizing engineering workflows, Turboscale targets companies using AWS and Kubernetes, indicating their growth and technological advancements.",
+      "verified_domain": "xyz.com",
+      "detected_tech_stack": [
+        "AWS EKS [Source: Verified Customer Case Study]",
+        "GitHub Actions [Source: Verified Customer Case Study]",
+        "Kubernetes [Source: Engineering Blog]"
+      ],
+      "personalisation_hooks": [
+        "Recently highlighted the 66% reduction in build times for clients like Veloce Health [Source: Verified Customer Case Study]",
+        "Turboscale is actively publishing technical content on CI/CD acceleration [Source: Company Outreach Strategy]",
+        "Promotions within the company that indicate possible structural changes in the sales and engineering teams [Source: LinkedIn Profile]"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 90,
+      "reasoning": "The prospect is a CTO at a B2B SaaS company with 120 employees, aligning perfectly with the ICP's role and company size criteria. They also utilize AWS and Kubernetes, which are central to Turboscale AI's technology stack, indicating a strong fit for the product.",
+      "matched_criteria": [
+        "Role Fit: CTO (25 points)",
+        "Company Fit: 120 employees in B2B SaaS in US (25 points)",
+        "Tech Stack Fit: Uses AWS, Kubernetes (25 points)",
+        "Pain Point Alignment: Potential need for CI/CD optimization (15 points)"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "8fefd36a-6351-4232-a6b1-9b6c3ed16231",
+      "recommended_channel": "EMAIL",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Emphasize how Turboscale AI has helped companies like Veloce Health achieve a 66% reduction in build times, which could benefit XYZ in their CI/CD workflows.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Highlight the case study about Veloce Health to establish credibility. Mention Turboscale AI's expertise in CI/CD optimization while avoiding overly technical jargon to keep it approachable for a CTO.",
+      "suggested_wait_days": 0,
+      "reasoning": "EMAIL is the primary channel for US Tech Leaders like Parvesh, and it allows for detailed communication. The angle connects directly to his likely pain points related to engineering efficiency and optimization, making it relevant."
+    },
+    "personalisation_result": {
+      "prospect_id": "8fefd36a-6351-4232-a6b1-9b6c3ed16231",
+      "channel": "EMAIL",
+      "subject_line": "Accelerating developer velocity at XYZ",
+      "content": "Hi Parvesh,\n\nI noticed your leadership as CTO at XYZ. At high-growth tech companies, engineering bottlenecks and repetitive SDLC tasks often slow down release cadence.\n\nOur Autonomous SDR and developer automation platform helps teams ship 40% faster without adding headcount.\n\nDo you have 10 minutes next Tuesday or Thursday for a brief introductory conversation?\n\nBest regards,\nAutonomous SDR Team",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "EMAIL",
+      "status": "SENT",
+      "provider_message_id": "email_975c60b0d702",
+      "recipient": "parvesh2520@gmail.com",
+      "error": null,
+      "subject": "Accelerating developer velocity at XYZ",
+      "timestamp": "2026-09-19T18:11:27.312158+00:00"
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "f78bc1dd-65f4-4ae1-8dd5-668ac1d22788",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "d0924bc9-be8d-438e-ac99-dc982d2d29dd",
+    "status": "RUNNING",
+    "current_agent": "LEAD_RESEARCH",
+    "channel": null,
+    "recommended_channel": null,
+    "actual_channel": null,
+    "action_type": null,
+    "provider_call_id": null,
+    "started_at": "2026-09-19T18:18:13.293065+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": null,
+    "error": null,
+    "research_result": null,
+    "icp_result": null,
+    "strategy_result": null,
+    "personalisation_result": null,
+    "channel_result": null,
+    "voice_agent_result": null
+  }
+]

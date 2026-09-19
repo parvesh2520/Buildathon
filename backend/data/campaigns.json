@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Voice AI Founders",
+    "description": "Targeting founders building Voice AI products",
+    "icp": "Founder / CEO at early-stage Voice AI startups",
+    "status": "PAUSED",
+    "enabled_channels": [
+      "EMAIL",
+      "SMS",
+      "LINKEDIN",
+      "PHONE"
+    ],
+    "id": "voice_ai_founder"
+  },
+  {
+    "name": "India BFSI CIOs",
+    "description": "Targeting CIOs at Indian BFSI enterprises",
+    "icp": "CIO / IT Director at BFSI companies, 1000+ employees, India",
+    "status": "LIVE",
+    "enabled_channels": [
+      "EMAIL",
+      "SMS",
+      "LINKEDIN",
+      "PHONE"
+    ],
+    "id": "india_bfsi_cio"
+  },
+  {
+    "name": "US SaaS CTOs",
+    "description": "Targeting CTOs at US-based SaaS companies",
+    "icp": "CTO / VP Engineering at SaaS companies, 50\u2013500 employees, US-based",
+    "status": "LIVE",
+    "enabled_channels": [
+      "EMAIL",
+      "SMS",
+      "LINKEDIN",
+      "PHONE"
+    ],
+    "id": "us_saas_cto"
+  }
+]

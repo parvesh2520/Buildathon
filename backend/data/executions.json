@@ -806,25 +806,77 @@
     "execution_id": "f78bc1dd-65f4-4ae1-8dd5-668ac1d22788",
     "campaign_id": "us_saas_cto",
     "prospect_id": "d0924bc9-be8d-438e-ac99-dc982d2d29dd",
-    "status": "RUNNING",
-    "current_agent": "LEAD_RESEARCH",
-    "channel": null,
-    "recommended_channel": null,
-    "actual_channel": null,
-    "action_type": null,
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": "SMS",
+    "recommended_channel": "SMS",
+    "actual_channel": "SMS",
+    "action_type": "NEW_OUTREACH",
     "provider_call_id": null,
     "started_at": "2026-09-19T18:18:13.293065+00:00",
     "answered_at": null,
     "ended_at": null,
     "duration": null,
     "call_outcome": null,
-    "completed_at": null,
+    "completed_at": "2026-09-19T18:18:46.594736+00:00",
     "error": null,
-    "research_result": null,
-    "icp_result": null,
-    "strategy_result": null,
-    "personalisation_result": null,
-    "channel_result": null,
+    "research_result": {
+      "prospect_id": "string (pass through)",
+      "prospect_summary": "Alex Rivera, Lead Technical SDR at Turboscale AI, is focused on optimizing cloud compute for high-velocity B2B SaaS teams. Turboscale AI specializes in enhancing CI/CD processes and resource management, primarily for companies operating on AWS and Kubernetes.",
+      "verified_domain": "xyz.com",
+      "detected_tech_stack": [
+        "AWS (EKS, ECS) [Source: Company Overview]",
+        "GitHub Actions [Source: Verified Customer Case Studies]",
+        "Kubernetes [Source: Company Overview]"
+      ],
+      "personalisation_hooks": [
+        "Recently highlighted improvements in CI/CD build times achieving a 66% reduction from 42 minutes to 14 minutes for Veloce Health [Source: Verified Customer Case Studies]",
+        "Active outreach about deploying improvements to Kubernetes and AWS efficiency [Source: Multi-Channel Outreach Copy Bank]",
+        "Noted the idle cost savings of $138,000/year for companies optimizing their cloud spend [Source: Verified Customer Case Studies]"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 85,
+      "reasoning": "The prospect meets all key ICP criteria for the campaign. They are a decision-maker in a US-based SaaS company with a workforce of 167, utilizing AWS and Kubernetes, indicating a strong alignment with the campaign's focus on improving CI/CD processes.",
+      "matched_criteria": [
+        "Role Fit: CEO (Decision Maker)",
+        "Company Fit: 50-500 employees, US-based (167 employees)",
+        "Tech Stack Fit: Uses AWS and Kubernetes",
+        "Pain Point Alignment: Clear operational need for cloud optimization and CI/CD improvements"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "d0924bc9-be8d-438e-ac99-dc982d2d29dd",
+      "recommended_channel": "SMS",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Highlight how Turboscale AI can optimize CI/CD processes, potentially achieving significant cost savings similar to the idle cost savings of $138,000/year realized by other companies.",
+      "tone": "CASUAL",
+      "instructions_for_copywriter": "Use a friendly and approachable tone. Mention specific results like the 66% reduction in CI/CD build times achieved by Veloce Health. Avoid formal jargon and keep the message brief and engaging.",
+      "suggested_wait_days": 0,
+      "reasoning": "SMS is the enabled channel per the prospect's notes, and it's appropriate given the CEO's role, allowing for a concise outreach without the formality of email."
+    },
+    "personalisation_result": {
+      "prospect_id": "d0924bc9-be8d-438e-ac99-dc982d2d29dd",
+      "channel": "SMS",
+      "subject_line": null,
+      "content": "Hi Parvesh, saw your work at XYZ. We help teams ship 40% faster with AI. Open to a 5-min chat next week? - SDR",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "SMS",
+      "status": "SENT",
+      "provider_message_id": "SM0ae9aca0411d9961604f61cabc0e5339",
+      "recipient": "+917419045750",
+      "content": "Hi Parvesh, saw your work at XYZ. We help teams ship 40% faster with AI. Open to a 5-min chat next week? - SDR",
+      "trial_template_used": "sms_appointment_reminders",
+      "error": null
+    },
     "voice_agent_result": null
   }
 ]

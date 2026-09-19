@@ -212,9 +212,9 @@
     "notes": "DO not send email try SMS\n",
     "campaign_id": "us_saas_cto",
     "campaignId": "us_saas_cto",
-    "status": "FIT",
+    "status": "SENT",
     "id": "d0924bc9-be8d-438e-ac99-dc982d2d29dd",
-    "campaignName": "US SaaS CTOs",
+    "campaignName": null,
     "icpScore": 85,
     "channel": "EMAIL",
     "lastActivity": "Just now"

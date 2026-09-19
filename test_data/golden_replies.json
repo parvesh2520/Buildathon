@@ -1,0 +1,92 @@
+[
+  {
+    "_test_id": "R01",
+    "_description": "Clear interest — wants meeting",
+    "_expected_intent": "INTERESTED_BOOK_MEETING",
+    "_expected_sentiment": "POSITIVE",
+    "_expected_escalate": false,
+    "prospect_id": "p_101",
+    "reply_text": "Hey Alex, this actually looks relevant to what we're dealing with. Our CI queues are brutal right now. Can you send me a calendar link for next week?"
+  },
+  {
+    "_test_id": "R02",
+    "_description": "Competitor objection — uses Datadog",
+    "_expected_intent": "OBJECTION_COMPETITOR",
+    "_expected_sentiment": "NEUTRAL",
+    "_expected_escalate": false,
+    "prospect_id": "p_101",
+    "reply_text": "We already use Datadog for infrastructure monitoring and cost tracking. How is Turboscale different from what we're already paying for?"
+  },
+  {
+    "_test_id": "R03",
+    "_description": "Pricing objection — should trigger HITL escalation",
+    "_expected_intent": "OBJECTION_PRICING",
+    "_expected_sentiment": "NEUTRAL",
+    "_expected_escalate": true,
+    "prospect_id": "p_101",
+    "reply_text": "Interesting concept. What does this cost? We just locked our infrastructure budget for Q4 and I need to understand the pricing model before committing any time."
+  },
+  {
+    "_test_id": "R04",
+    "_description": "Timing objection — too busy right now",
+    "_expected_intent": "OBJECTION_NO_TIME",
+    "_expected_sentiment": "NEUTRAL",
+    "_expected_escalate": false,
+    "prospect_id": "p_201",
+    "reply_text": "Thank you for reaching out, Priya. We are currently in the middle of our annual core banking migration and cannot take on any new evaluations until Q1 2027. Please follow up then."
+  },
+  {
+    "_test_id": "R05",
+    "_description": "Hard unsubscribe — must comply immediately",
+    "_expected_intent": "UNSUBSCRIBE",
+    "_expected_sentiment": "NEGATIVE",
+    "_expected_escalate": false,
+    "prospect_id": "p_102",
+    "reply_text": "Please remove me from your mailing list. I did not opt in to receive these emails."
+  },
+  {
+    "_test_id": "R06",
+    "_description": "Angry unsubscribe — needs human escalation",
+    "_expected_intent": "UNSUBSCRIBE",
+    "_expected_sentiment": "NEGATIVE",
+    "_expected_escalate": true,
+    "prospect_id": "p_104",
+    "reply_text": "This is the third unsolicited email I've received from your company. Stop spamming me immediately. Who is your manager? I want to file a formal complaint."
+  },
+  {
+    "_test_id": "R07",
+    "_description": "Out of office auto-reply",
+    "_expected_intent": "OUT_OF_OFFICE",
+    "_expected_sentiment": "NEUTRAL",
+    "_expected_escalate": false,
+    "prospect_id": "p_201",
+    "reply_text": "Thank you for your email. I am currently out of office until October 5th, 2026 with limited access to email. For urgent matters, please contact amit.kumar@apexfin.in."
+  },
+  {
+    "_test_id": "R08",
+    "_description": "Technical question — needs detailed docs response",
+    "_expected_intent": "TECHNICAL_QUESTION",
+    "_expected_sentiment": "POSITIVE",
+    "_expected_escalate": false,
+    "prospect_id": "p_101",
+    "reply_text": "This is intriguing. How does Turboscale handle multi-region Kubernetes clusters? We run EKS in us-east-1 and eu-west-1 with cross-region replication. Does your IAM integration support that topology?"
+  },
+  {
+    "_test_id": "R09",
+    "_description": "Ambiguous one-word reply — tricky classification",
+    "_expected_intent": "INTERESTED_BOOK_MEETING",
+    "_expected_sentiment": "NEUTRAL",
+    "_expected_escalate": false,
+    "prospect_id": "p_301",
+    "reply_text": "Interesting. Tell me more."
+  },
+  {
+    "_test_id": "R10",
+    "_description": "Mixed signal — interest + competitor lock-in",
+    "_expected_intent": "OBJECTION_COMPETITOR",
+    "_expected_sentiment": "NEUTRAL",
+    "_expected_escalate": false,
+    "prospect_id": "p_304",
+    "reply_text": "The latency numbers are impressive, but we just signed a 12-month contract with Deepgram + our own WebSocket stack. Would be open to revisiting when our contract is up in August 2027."
+  }
+]

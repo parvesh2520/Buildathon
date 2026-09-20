@@ -3,7 +3,7 @@
     "name": "US Enterprise Cloud & Platform Leaders",
     "description": "",
     "icp": "VP of Engineering, CTO, and Head of Infrastructure at US cloud software and enterprise SaaS companies with 100-2,000 employees looking to optimize CI/CD pipelines, reduce Kubernetes egress costs, and automate developer workflows.",
-    "status": "LIVE",
+    "status": "PAUSED",
     "enabled_channels": [
       "EMAIL",
       "SMS",

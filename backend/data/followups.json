@@ -1,0 +1,121 @@
+[
+  {
+    "id": "8cea79cf-e200-4f78-8f03-d5138e22387e",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "jason_miller_cloudscale",
+    "touch_number": 3,
+    "channel": null,
+    "action": "INVALID",
+    "status": "FAILED",
+    "scheduled_at": null,
+    "sent_at": null,
+    "agent_decision": {
+      "prospect_id": null,
+      "action": "",
+      "next_channel": null,
+      "next_touch_number": null,
+      "wait_days": null,
+      "angle": null,
+      "reason": null
+    },
+    "raw_response": {
+      "success": false,
+      "payload": {
+        "prospect_id": "jason_miller_cloudscale",
+        "campaign_id": "us_saas_cto",
+        "campaign": "us_saas_cto",
+        "campaign_name": "US SaaS CTOs",
+        "icp_fit_score": 92,
+        "icp_status": "FIT",
+        "touch_number": 2,
+        "max_allowed_touches": 3,
+        "allowed_channels": [
+          "EMAIL",
+          "LINKEDIN"
+        ],
+        "prior_touches": [
+          {
+            "touch_number": 1,
+            "channel": "EMAIL",
+            "days_ago": 3,
+            "angle": "CI_BUILD_TIME",
+            "proof_point": "VELOCE_42_TO_14",
+            "reply_received": false
+          }
+        ],
+        "prospect": {
+          "id": "jason_miller_cloudscale"
+        },
+        "timestamp": "2026-09-20T14:54:39.764691+00:00",
+        "agent_id": "804afc14-0c51-4fbc-a31f-9364cc6bfd71"
+      },
+      "error": "<urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>",
+      "raw_response": {}
+    },
+    "execution_id": null,
+    "error": "Invalid follow-up action ''",
+    "created_at": "2026-09-20T14:54:41.809548+00:00",
+    "updated_at": "2026-09-20T14:54:41.809548+00:00"
+  },
+  {
+    "id": "1b449a93-31a0-4756-b356-2a4237079cc2",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "jason_miller_cloudscale",
+    "touch_number": 3,
+    "channel": null,
+    "action": "INVALID",
+    "status": "FAILED",
+    "scheduled_at": null,
+    "sent_at": null,
+    "agent_decision": {
+      "prospect_id": null,
+      "action": "",
+      "next_channel": null,
+      "next_touch_number": null,
+      "wait_days": null,
+      "angle": null,
+      "reason": null
+    },
+    "raw_response": {
+      "success": false,
+      "status_code": 401,
+      "payload": {
+        "prospect_id": "jason_miller_cloudscale",
+        "campaign_id": "us_saas_cto",
+        "campaign": "us_saas_cto",
+        "campaign_name": "US SaaS CTOs",
+        "icp_fit_score": 92,
+        "icp_status": "FIT",
+        "touch_number": 2,
+        "max_allowed_touches": 3,
+        "allowed_channels": [
+          "EMAIL",
+          "LINKEDIN"
+        ],
+        "prior_touches": [
+          {
+            "touch_number": 1,
+            "channel": "EMAIL",
+            "days_ago": 3,
+            "angle": "CI_BUILD_TIME",
+            "proof_point": "VELOCE_42_TO_14",
+            "reply_received": false
+          }
+        ],
+        "prospect": {
+          "id": "jason_miller_cloudscale"
+        },
+        "timestamp": "2026-09-20T14:54:58.882478+00:00",
+        "agent_id": "804afc14-0c51-4fbc-a31f-9364cc6bfd71"
+      },
+      "error": "HTTP Error 401",
+      "raw_response": {
+        "detail": "An API key is required in the 'api-key' header."
+      }
+    },
+    "execution_id": null,
+    "error": "Invalid follow-up action ''",
+    "created_at": "2026-09-20T14:55:00.221797+00:00",
+    "updated_at": "2026-09-20T14:55:00.221797+00:00"
+  }
+]

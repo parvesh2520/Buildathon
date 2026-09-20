@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Literal, Optional
 import uuid
 
@@ -6,11 +6,21 @@ CampaignStatus = Literal["LIVE", "PAUSED"]
 
 
 class CampaignCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     name: str
     description: Optional[str] = None
-    icp: str
-    status: CampaignStatus = "PAUSED"
+    icp: Optional[str] = ""
+    status: str = "PAUSED"
     enabled_channels: list[str] = ["EMAIL", "SMS", "LINKEDIN", "PHONE"]
+
+    @field_validator('status', mode='before')
+    @classmethod
+    def normalise_status(cls, v: str) -> str:
+        upper = str(v).upper()
+        if upper in ("LIVE", "ACTIVE", "ENABLED"):
+            return "LIVE"
+        return "PAUSED"
 
 
 class Campaign(CampaignCreate):
@@ -31,12 +41,37 @@ DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 CAMPAIGNS_FILE = DATA_DIR / "campaigns.json"
 
 _DEFAULT_CAMPAIGNS: dict[str, Campaign] = {
+    "2f35fbd3-8228-41f7-8b5f-6f6654661acc": Campaign(
+        id="2f35fbd3-8228-41f7-8b5f-6f6654661acc",
+        name="US SAAS CTO",
+        description="Targeting CTOs at US-based SaaS companies",
+        icp="CTO / VP Engineering at SaaS companies, 50–500 employees, US-based",
+        status="LIVE",
+        enabled_channels=["EMAIL", "SMS", "LINKEDIN", "PHONE"],
+    ),
+    "e9e98ab6-79d1-46cb-9bd6-e018444fbe68": Campaign(
+        id="e9e98ab6-79d1-46cb-9bd6-e018444fbe68",
+        name="INDIAN B2B SAAS",
+        description="Targeting engineering leaders at Indian B2B SaaS firms",
+        icp="CTO / VP Engineering / Head of Engineering at B2B SaaS, India",
+        status="LIVE",
+        enabled_channels=["EMAIL", "SMS", "LINKEDIN", "PHONE"],
+    ),
+    "3d2b7257-a20c-400e-a815-57e3e6e8e156": Campaign(
+        id="3d2b7257-a20c-400e-a815-57e3e6e8e156",
+        name="Indian SAAS",
+        description="Targeting Indian SaaS tech leads",
+        icp="Engineering Leaders at Indian SaaS startups",
+        status="LIVE",
+        enabled_channels=["EMAIL", "SMS", "LINKEDIN", "PHONE"],
+    ),
     "us_saas_cto": Campaign(
         id="us_saas_cto",
         name="US SaaS CTOs",
         description="Targeting CTOs at US-based SaaS companies",
         icp="CTO / VP Engineering at SaaS companies, 50–500 employees, US-based",
         status="LIVE",
+        enabled_channels=["EMAIL", "SMS", "LINKEDIN", "PHONE"],
     ),
     "india_bfsi_cio": Campaign(
         id="india_bfsi_cio",
@@ -44,6 +79,7 @@ _DEFAULT_CAMPAIGNS: dict[str, Campaign] = {
         description="Targeting CIOs at Indian BFSI enterprises",
         icp="CIO / IT Director at BFSI companies, 1000+ employees, India",
         status="LIVE",
+        enabled_channels=["EMAIL", "SMS", "LINKEDIN", "PHONE"],
     ),
     "voice_ai_founder": Campaign(
         id="voice_ai_founder",
@@ -51,6 +87,7 @@ _DEFAULT_CAMPAIGNS: dict[str, Campaign] = {
         description="Targeting founders building Voice AI products",
         icp="Founder / CEO at early-stage Voice AI startups",
         status="PAUSED",
+        enabled_channels=["EMAIL", "SMS", "LINKEDIN", "PHONE"],
     ),
 }
 
@@ -68,9 +105,6 @@ def _load_campaigns() -> dict[str, Campaign]:
                         loaded[c.id] = c
         except Exception:
             pass
-    for k, v in _DEFAULT_CAMPAIGNS.items():
-        if k not in loaded:
-            loaded[k] = v
     return loaded
 
 
@@ -88,33 +122,53 @@ _save_campaigns(_campaigns)
 
 
 def get_all_campaigns() -> list[Campaign]:
+    global _campaigns
     from app.services.supabase_db import sb_get_campaigns
+    from app.config import SUPABASE_URL, SUPABASE_KEY
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            remote = sb_get_campaigns()
+            if remote is not None:
+                _campaigns = {item["id"]: Campaign(**item) for item in remote if item.get("id")}
+                _save_campaigns(_campaigns)
+                return list(_campaigns.values())
+        except Exception as exc:
+            pass
+
     try:
-        remote = sb_get_campaigns()
-        if remote is not None and len(remote) > 0:
-            new_store = {item["id"]: Campaign(**item) for item in remote}
-            _campaigns.clear()
-            _campaigns.update(new_store)
-            _save_campaigns(_campaigns)
-            return list(_campaigns.values())
+        fresh = _load_campaigns()
+        _campaigns.update(fresh)
     except Exception:
         pass
     return list(_campaigns.values())
 
 
 def get_campaign(campaign_id: str) -> Optional[Campaign]:
+    global _campaigns
     from app.services.supabase_db import sb_get_campaign
-    try:
-        remote = sb_get_campaign(campaign_id)
-        if remote:
-            c = Campaign(**remote)
-            _campaigns[c.id] = c
-            return c
-        elif remote is not None:
-            if campaign_id in _campaigns:
-                _campaigns.pop(campaign_id, None)
+    from app.config import SUPABASE_URL, SUPABASE_KEY
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            remote = sb_get_campaign(campaign_id)
+            if remote:
+                c = Campaign(**remote)
+                _campaigns[c.id] = c
                 _save_campaigns(_campaigns)
-            return None
+                return c
+            elif remote is None:
+                # Not in Supabase -> remove from local cache if present
+                if campaign_id in _campaigns:
+                    _campaigns.pop(campaign_id, None)
+                    _save_campaigns(_campaigns)
+                return None
+        except Exception:
+            pass
+
+    if campaign_id in _campaigns:
+        return _campaigns[campaign_id]
+    try:
+        fresh = _load_campaigns()
+        _campaigns.update(fresh)
     except Exception:
         pass
     return _campaigns.get(campaign_id)
@@ -130,6 +184,18 @@ def create_campaign(data: CampaignCreate) -> Campaign:
     except Exception:
         pass
     return campaign
+
+
+def delete_campaign(campaign_id: str) -> bool:
+    from app.services.supabase_db import sb_delete_campaign
+    existed = campaign_id in _campaigns
+    _campaigns.pop(campaign_id, None)
+    _save_campaigns(_campaigns)
+    try:
+        sb_delete_campaign(campaign_id)
+    except Exception:
+        pass
+    return existed
 
 
 def update_campaign_status(campaign_id: str, status: CampaignStatus) -> Optional[Campaign]:

@@ -24,7 +24,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { runSDR, getProspectExecution } from '@/api/sdr';
 import { deleteProspect, updateProspectStatus } from '@/api/prospects';
 import toast from 'react-hot-toast';
-import { cn } from '@/lib/utils';
+import { cn, formatAgentText } from '@/lib/utils';
 
 function LinkedInIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -105,8 +105,8 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
   const activeNote =
     customNote !== ''
       ? customNote
-      : execution?.personalisation_result?.content ||
-        execution?.channel_result?.content ||
+      : formatAgentText(execution?.personalisation_result?.content) ||
+        formatAgentText(execution?.channel_result?.content) ||
         defaultNote;
 
   const handleCopyNote = async () => {
@@ -353,7 +353,7 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
                 <span className="text-2xs text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded">Active</span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                {execution?.research_result?.prospect_summary || `Intelligence verified for ${prospect.title} at ${prospect.company}.`}
+                {formatAgentText(execution?.research_result?.prospect_summary) || `Intelligence verified for ${prospect.title} at ${prospect.company}.`}
               </p>
               {execution?.research_result?.detected_tech_stack && (
                 <div className="flex flex-wrap gap-1 mt-1">
@@ -383,7 +383,7 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
                 />
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                {execution?.icp_result?.reasoning || `Prospect matches ICP qualification criteria for ${prospect.campaignName || 'Campaign'}.`}
+                {formatAgentText(execution?.icp_result?.reasoning) || `Prospect matches ICP qualification criteria for ${prospect.campaignName || 'Campaign'}.`}
               </p>
             </div>
 
@@ -399,12 +399,12 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
               </div>
               {execution?.strategy_result?.angle && (
                 <p className="text-xs text-slate-600">
-                  <strong className="text-slate-700">Angle:</strong> {execution.strategy_result.angle}
+                  <strong className="text-slate-700">Angle:</strong> {formatAgentText(execution.strategy_result.angle)}
                 </p>
               )}
               {execution?.strategy_result?.reasoning && (
                 <p className="text-xs text-slate-500 italic">
-                  {execution.strategy_result.reasoning}
+                  {formatAgentText(execution.strategy_result.reasoning)}
                 </p>
               )}
             </div>
@@ -417,16 +417,16 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
                     <MessageSquare size={13} className="text-brand" /> 4. Personalisation & Generated Copy
                   </span>
                   <span className="text-2xs text-brand font-medium">
-                    {execution.personalisation_result.content?.length ?? 0} chars
+                    {formatAgentText(execution.personalisation_result.content).length} chars
                   </span>
                 </div>
                 {execution.personalisation_result.subject_line && (
                   <p className="text-xs font-medium text-slate-800">
-                    Subject: {execution.personalisation_result.subject_line}
+                    Subject: {formatAgentText(execution.personalisation_result.subject_line)}
                   </p>
                 )}
                 <div className="text-xs text-slate-700 bg-white p-2.5 rounded-lg border border-border-light whitespace-pre-wrap font-sans">
-                  {execution.personalisation_result.content}
+                  {formatAgentText(execution.personalisation_result.content)}
                 </div>
               </div>
             ) : (

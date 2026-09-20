@@ -401,6 +401,7 @@ class TestSMSExecutorWebhook:
             assert result["status"] == "FAILED"
             assert "DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL not configured" in result["error"]
 
+    @patch("app.services.dronahq.DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL", "https://automations.dronahq.com/webhook/test-sms-executor")
     def test_call_sms_executor_missing_phone(self):
         """Test E: Missing to_phone does NOT call webhook and returns clear error."""
         with patch("urllib.request.urlopen") as mock_urlopen:
@@ -421,6 +422,7 @@ class TestSMSDispatcherIntegration:
     """Tests for channel dispatcher and send_sms integration with SMS executor."""
 
     @pytest.mark.asyncio
+    @patch("app.services.sms.SMS_PROVIDER", "dronahq")
     @patch("app.services.sms.DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL", "https://automations.dronahq.com/webhook/test-sms-executor")
     @patch("app.services.sms.call_sms_executor")
     async def test_send_sms_calls_executor_and_marks_sent(self, mock_call_sms):
@@ -457,6 +459,7 @@ class TestSMSDispatcherIntegration:
         assert outcome["provider"] == "DRONAHQ_SMS_EXECUTOR"
 
     @pytest.mark.asyncio
+    @patch("app.services.sms.SMS_PROVIDER", "dronahq")
     @patch("app.services.sms.DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL", "https://automations.dronahq.com/webhook/test-sms-executor")
     @patch("app.services.sms.call_sms_executor")
     @patch("urllib.request.urlopen")

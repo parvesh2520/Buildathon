@@ -43,10 +43,18 @@ export interface CampaignStatusUpdate {
 // ─── Prospect ────────────────────────────────────────────────────────────────
 
 export type ProspectStatus =
+  | 'DISCOVERED'
+  | 'SELECTED'
+  | 'QUEUED'
+  | 'PROCESSING'
+  | 'COMPLETED'
+  | 'REJECTED'
   | 'FIT'
   | 'REVIEW'
   | 'NO_FIT'
   | 'CONTACTED'
+  | 'SENT'
+  | 'FAILED'
   | 'REPLIED'
   | 'MEETING';
 
@@ -58,18 +66,26 @@ export interface Prospect {
   email: string;
   phone?: string;
   linkedin_url?: string;
+  linkedinUrl?: string;
   title: string;
   company: string;
   domain?: string;
   location?: string;
   companySize?: string;
+  company_size?: string;
   notes?: string;
   campaignId?: string;
+  campaign_id?: string;
   campaignName?: string;
   icpScore?: number;
   status?: ProspectStatus;
   channel?: OutreachChannel;
   lastActivity?: string;
+  discovery_source?: string;
+  raw_data?: Record<string, any>;
+  metadata?: Record<string, any>;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ProspectCreate {
@@ -77,6 +93,7 @@ export interface ProspectCreate {
   email: string;
   phone?: string;
   linkedin_url?: string;
+  linkedinUrl?: string;
   title: string;
   company: string;
   domain?: string;
@@ -84,6 +101,46 @@ export interface ProspectCreate {
   companySize?: string;
   notes?: string;
   campaignId?: string;
+  discovery_source?: string;
+  raw_data?: Record<string, any>;
+}
+
+export interface DiscoveredProspectsResponse {
+  success: boolean;
+  campaign_id: string;
+  stored_count: number;
+  updated_count: number;
+  total_processed: number;
+  prospects: Prospect[];
+}
+
+export interface RunDiscoveryResponse {
+  success: boolean;
+  campaign_id: string;
+  requested_count: number;
+  criteria_applied?: string;
+  stored_count: number;
+  updated_count: number;
+  prospects: Prospect[];
+}
+
+export interface StartPipelineResponse {
+  success: boolean;
+  campaign_id: string;
+  queued_count: number;
+  prospect_ids: string[];
+  results: {
+    prospect_id: string;
+    name: string;
+    company: string;
+    status: string;
+    execution_status: string;
+    channel?: string;
+    execution_id?: string;
+    error?: string;
+    icp_score?: number;
+    icp_reasoning?: string;
+  }[];
 }
 
 // ─── Agent ───────────────────────────────────────────────────────────────────

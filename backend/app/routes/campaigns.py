@@ -6,6 +6,7 @@ from app.models.campaign import (
     get_all_campaigns,
     get_campaign,
     create_campaign,
+    delete_campaign,
     update_campaign_status,
 )
 
@@ -30,6 +31,12 @@ def add_campaign(payload: CampaignCreate) -> Campaign:
     return create_campaign(payload)
 
 
+@router.delete("/{campaign_id}", status_code=200)
+def remove_campaign(campaign_id: str):
+    delete_campaign(campaign_id)
+    return {"status": "deleted", "id": campaign_id}
+
+
 @router.patch("/{campaign_id}/status", response_model=Campaign)
 def change_campaign_status(campaign_id: str, payload: CampaignStatusUpdate) -> Campaign:
     campaign = update_campaign_status(campaign_id, payload.status)
@@ -50,6 +57,9 @@ from typing import Optional, Dict, Any
 
 class DuplicateCampaignRequest(BaseModel):
     variant_name: Optional[str] = None
+
+class EnrollLeadsRequest(BaseModel):
+    prospect_ids: Optional[list[str]] = None
 
 class SavePromptsRequest(BaseModel):
     system_prompt: str
@@ -80,6 +90,14 @@ def duplicate_existing_campaign(campaign_id: str, payload: DuplicateCampaignRequ
         return duplicate_campaign(campaign_id, payload.variant_name)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/{campaign_id}/enroll-leads")
+def enroll_leads_to_campaign(campaign_id: str, payload: EnrollLeadsRequest = EnrollLeadsRequest()):
+    """Enrolls leads/prospects into a target campaign, updating local state and Supabase."""
+    from app.models.prospect import assign_prospects_to_campaign
+    updated = assign_prospects_to_campaign(campaign_id, payload.prospect_ids)
+    return {"enrolled_count": len(updated), "prospects": updated}
 
 
 @router.get("/{campaign_id}/prompts")

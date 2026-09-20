@@ -69,11 +69,21 @@ def sb_get_campaign(campaign_id: str) -> Optional[Dict[str, Any]]:
 
 def sb_upsert_campaign(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     payload = dict(data)
+    payload["icp"] = payload.get("icp") or ""
     payload["updated_at"] = datetime.now(timezone.utc).isoformat()
     res = _request("campaigns", method="POST", data=payload, prefer_upsert=True)
     if isinstance(res, list) and len(res) > 0:
         return res[0]
     return None
+
+
+def sb_delete_campaign(campaign_id: str) -> bool:
+    try:
+        res = _request(f"campaigns?id=eq.{campaign_id}", method="DELETE")
+        return res is not None
+    except Exception as exc:
+        logger.error(f"[SUPABASE DELETE ERROR] {exc}")
+        return False
 
 
 # ============================================================================
@@ -335,4 +345,3 @@ def sb_get_database_stats() -> Dict[str, Any]:
         "total_rows": sum(counts.values()),
         "checked_at": datetime.now(timezone.utc).isoformat(),
     }
-

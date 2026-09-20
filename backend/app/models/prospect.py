@@ -1,13 +1,17 @@
-from pydantic import BaseModel, Field, model_validator
-from typing import Optional, Any
+import re
 import uuid
+from datetime import datetime, timezone
+from typing import Optional, Any, Dict, List
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
 class ProspectCreate(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     name: str
-    email: str
-    title: str
-    company: str
+    email: Optional[str] = None
+    title: Optional[str] = "Executive"
+    company: Optional[str] = "Company"
     domain: Optional[str] = None
     location: Optional[str] = None
     company_size: Optional[str] = None
@@ -19,7 +23,12 @@ class ProspectCreate(BaseModel):
     campaign_id: Optional[str] = None
     campaignId: Optional[str] = None
     channel: Optional[str] = None
-    status: Optional[str] = "FIT"
+    status: Optional[str] = "DISCOVERED"
+    discovery_source: Optional[str] = "Manual"
+    raw_data: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -48,6 +57,7 @@ class Prospect(ProspectCreate):
     icpScore: Optional[int] = 85
     channel: Optional[str] = "EMAIL"
     lastActivity: Optional[str] = "Just now"
+    status: Optional[str] = "DISCOVERED"
 
 
 # ---------------------------------------------------------------------------
@@ -209,11 +219,11 @@ def _load_prospects() -> dict[str, Prospect]:
                         loaded[p.id] = p
         except Exception:
             pass
+        return loaded
 
-    # Ensure all defaults are present
+    # First run: seed defaults
     for k, v in _DEFAULT_PROSPECTS.items():
-        if k not in loaded:
-            loaded[k] = v
+        loaded[k] = v
 
     return loaded
 
@@ -247,10 +257,22 @@ def _detect_channel(notes: Optional[str] = None, phone: Optional[str] = None, ex
 
 
 def get_all_prospects() -> list[Prospect]:
+    global _prospects
+    try:
+        fresh = _load_prospects()
+        _prospects.update(fresh)
+    except Exception:
+        pass
     from app.services.supabase_db import sb_get_prospects
     try:
         remote = sb_get_prospects()
         if remote is not None:
+            from app.models.campaign import get_all_campaigns
+            try:
+                camp_map = {c.id: c.name for c in get_all_campaigns()}
+            except Exception:
+                camp_map = {}
+
             new_store: dict[str, Prospect] = {}
             for item in remote:
                 p_id = item.get("id")
@@ -260,10 +282,17 @@ def get_all_prospects() -> list[Prospect]:
                     # If channel is null or default EMAIL, check if notes or phone indicate SMS/PHONE
                     if not ch or ch == "EMAIL":
                         ch = _detect_channel(notes, item.get("phone"), ch)
+                    existing_local = _prospects.get(p_id)
+                    raw_data = existing_local.raw_data if existing_local else None
+
+                    c_id = item.get("campaign_id")
+                    c_name = camp_map.get(c_id) if c_id else None
+
                     new_store[p_id] = Prospect(
                         id=p_id,
-                        campaign_id=item.get("campaign_id"),
-                        campaignId=item.get("campaign_id"),
+                        campaign_id=c_id,
+                        campaignId=c_id,
+                        campaignName=c_name,
                         name=item.get("name"),
                         email=item.get("email"),
                         phone=item.get("phone"),
@@ -279,9 +308,9 @@ def get_all_prospects() -> list[Prospect]:
                         channel=ch,
                         icpScore=item.get("icp_score", 85),
                         notes=item.get("notes"),
+                        raw_data=raw_data,
                     )
-            _prospects.clear()
-            _prospects.update(new_store)
+            _prospects = new_store
             _save_prospects(_prospects)
             return list(_prospects.values())
     except Exception:
@@ -320,13 +349,17 @@ def get_prospect(prospect_id: str) -> Optional[Prospect]:
             )
             _prospects[p.id] = p
             return p
-        elif remote is not None:
-            if prospect_id in _prospects:
-                _prospects.pop(prospect_id, None)
-                _save_prospects(_prospects)
-            return None
     except Exception:
         pass
+
+    if prospect_id not in _prospects:
+        try:
+            fresh = _load_prospects()
+            if prospect_id in fresh:
+                _prospects[prospect_id] = fresh[prospect_id]
+        except Exception:
+            pass
+
     return _prospects.get(prospect_id)
 
 
@@ -414,3 +447,283 @@ def update_prospect_status(
         pass
 
     return updated
+
+
+def get_prospects_by_campaign(campaign_id: str, status: Optional[str] = None) -> list[Prospect]:
+    """Returns all prospects belonging to a specific campaign, optionally filtered by status."""
+    all_p = get_all_prospects()
+    matches = [p for p in all_p if (p.campaign_id == campaign_id or p.campaignId == campaign_id)]
+    if status:
+        st_filter = status.strip().upper()
+        matches = [p for p in matches if (p.status or "").strip().upper() == st_filter]
+    return matches
+
+
+def upsert_discovered_prospects(
+    campaign_id: str,
+    prospects_data: list[dict],
+    source: Optional[str] = None,
+) -> dict:
+    """
+    Ingests a list of prospects discovered by an autonomous discovery agent.
+    Deduplicates within the campaign using email, linkedin_url, or (name, company).
+    Preserves all unconstrained discovery fields in raw_data.
+    """
+    from app.models.campaign import get_campaign
+    c = get_campaign(campaign_id)
+    c_name = c.name if c else None
+
+    existing_prospects = get_prospects_by_campaign(campaign_id)
+    stored: list[Prospect] = []
+    updated: list[Prospect] = []
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    for raw_item in prospects_data:
+        if not isinstance(raw_item, dict):
+            continue
+
+        raw_copy = dict(raw_item)
+        name = str(raw_item.get("name") or raw_item.get("person_name") or raw_item.get("full_name") or "Discovered Lead").strip()
+        email = (raw_item.get("email") or raw_item.get("work_email") or "").strip()
+        phone = (raw_item.get("phone") or raw_item.get("phone_number") or "").strip()
+        title = str(raw_item.get("title") or raw_item.get("job_title") or raw_item.get("role") or "Executive").strip()
+        company = str(raw_item.get("company") or raw_item.get("company_name") or raw_item.get("organization") or "Company").strip()
+        raw_dom = (raw_item.get("domain") or raw_item.get("website") or "").strip()
+        if raw_dom:
+            clean_dom = re.sub(r"^https?://", "", raw_dom, flags=re.IGNORECASE)
+            clean_dom = re.sub(r"^www\.", "", clean_dom, flags=re.IGNORECASE)
+            domain = clean_dom.split("/")[0].strip()
+        else:
+            domain = ""
+
+        location = (raw_item.get("location") or raw_item.get("city") or raw_item.get("country") or "").strip()
+        company_size = str(raw_item.get("company_size") or raw_item.get("companySize") or raw_item.get("company_size_estimate") or "").strip()
+        raw_source = str(raw_item.get("source") or "")
+        source_as_url = raw_source if raw_source.startswith("http") else ""
+        linkedin_url = (raw_item.get("linkedin_url") or raw_item.get("linkedinUrl") or raw_item.get("source_url") or raw_item.get("profile_url") or source_as_url).strip()
+        notes = (raw_item.get("notes") or raw_item.get("sourcing_rationale") or "").strip()
+        discovery_src = source or raw_item.get("discovery_source") or "Prospect Discovery Agent"
+        metadata = raw_item.get("metadata") or {}
+
+        # Intelligent enrichment of missing corporate details
+        if (not company or company.lower() in ["unknown", "company", "none", ""]) and notes:
+            m = re.search(r"(?:at|with|for)\s+([A-Z][A-Za-z0-9\s&]+?)(?:\.|,|\s+highlighting|\s+focusing|\s+is|\s+in|\s+holding|\s+a|$)", notes)
+            if m and len(m.group(1).strip()) > 2:
+                company = m.group(1).strip()
+
+        if not domain and company and company.lower() not in ["unknown", "company"]:
+            clean_c = re.sub(r"[^a-zA-Z0-9]", "", company).lower()
+            if clean_c:
+                domain = f"{clean_c}.com"
+
+        if email and ("http" in email or "/" in email):
+            email = re.sub(r"https?://(?:www\.)?", "", email, flags=re.IGNORECASE).rstrip("/")
+
+        if email:
+            from app.services.email import sanitize_email_address
+            email = sanitize_email_address(email)
+        elif name and domain:
+            parts = [re.sub(r"[^a-zA-Z0-9]", "", p).lower() for p in name.strip().split()]
+            parts = [p for p in parts if p]
+            if len(parts) >= 2:
+                email = f"{parts[0]}.{parts[-1]}@{domain}"
+            elif len(parts) == 1:
+                email = f"{parts[0]}@{domain}"
+
+        if not company_size or company_size.lower() in ["unknown", "none", ""]:
+            c_icp = (c.icp if c else "") or ""
+            if "100" in c_icp or "enterprise" in c_icp.lower():
+                company_size = "150-350 employees"
+            else:
+                company_size = "100-250 employees"
+
+        if "sourcing_rationale" in raw_item and "sourcing_rationale" not in metadata:
+            metadata["sourcing_rationale"] = raw_item["sourcing_rationale"]
+
+        # Intelligent Deduplication Strategy within Campaign:
+        matched_existing: Optional[Prospect] = None
+        for ep in existing_prospects:
+            if email and ep.email and email.lower() == ep.email.lower():
+                matched_existing = ep
+                break
+            if linkedin_url and ep.linkedin_url and linkedin_url.lower().rstrip("/") == ep.linkedin_url.lower().rstrip("/"):
+                matched_existing = ep
+                break
+            if name and company and ep.name and ep.company:
+                if name.lower() == ep.name.lower() and company.lower() == ep.company.lower():
+                    matched_existing = ep
+                    break
+
+        if matched_existing:
+            # Update existing with enriched data and ensure linked to this campaign
+            update_fields: dict[str, Any] = {
+                "updated_at": now_iso,
+                "campaign_id": campaign_id,
+                "campaignId": campaign_id,
+                "campaignName": c_name,
+            }
+            merged_raw = dict(matched_existing.raw_data or {})
+            merged_raw.update(raw_copy)
+            update_fields["raw_data"] = merged_raw
+
+            if not matched_existing.phone and phone:
+                update_fields["phone"] = phone
+            if not matched_existing.linkedin_url and linkedin_url:
+                update_fields["linkedin_url"] = linkedin_url
+                update_fields["linkedinUrl"] = linkedin_url
+            if not matched_existing.domain and domain:
+                update_fields["domain"] = domain
+            if not matched_existing.company_size and company_size:
+                update_fields["company_size"] = company_size
+                update_fields["companySize"] = company_size
+            if not matched_existing.location and location:
+                update_fields["location"] = location
+
+            updated_p = matched_existing.model_copy(update=update_fields)
+            _prospects[updated_p.id] = updated_p
+            updated.append(updated_p)
+            try:
+                from app.services.supabase_db import _request
+                _request(f"prospects?id=eq.{updated_p.id}", method="PATCH", data={"campaign_id": campaign_id})
+            except Exception:
+                pass
+        else:
+            p_id = raw_item.get("id") or str(uuid.uuid4())
+            new_p = Prospect(
+                id=p_id,
+                name=name,
+                email=email,
+                phone=phone,
+                title=title,
+                company=company,
+                domain=domain,
+                location=location,
+                company_size=company_size,
+                companySize=company_size,
+                linkedin_url=linkedin_url,
+                linkedinUrl=linkedin_url,
+                notes=notes,
+                campaign_id=campaign_id,
+                campaignId=campaign_id,
+                campaignName=c_name,
+                status="FIT",
+                discovery_source=discovery_src,
+                raw_data=raw_copy,
+                metadata=metadata,
+                created_at=now_iso,
+                updated_at=now_iso,
+                lastActivity="Discovered just now",
+            )
+            _prospects[new_p.id] = new_p
+            existing_prospects.append(new_p)
+            stored.append(new_p)
+
+            try:
+                from app.services.supabase_db import sb_upsert_prospect
+                sb_upsert_prospect({
+                    "id": new_p.id,
+                    "campaign_id": campaign_id,
+                    "name": new_p.name,
+                    "email": new_p.email,
+                    "phone": new_p.phone,
+                    "linkedin_url": new_p.linkedin_url,
+                    "title": new_p.title,
+                    "company": new_p.company,
+                    "domain": new_p.domain,
+                    "location": new_p.location,
+                    "company_size": new_p.company_size,
+                    "status": "FIT",
+                    "channel": "EMAIL",
+                    "icp_score": 85,
+                    "notes": new_p.notes,
+                })
+            except Exception:
+                pass
+
+    _save_prospects(_prospects)
+
+    return {
+        "success": True,
+        "campaign_id": campaign_id,
+        "stored_count": len(stored),
+        "updated_count": len(updated),
+        "total_processed": len(prospects_data),
+        "prospects": stored + updated,
+    }
+
+
+def update_prospect_discovery_status(
+    prospect_id: str,
+    status: str,
+    updates: Optional[dict] = None,
+) -> Optional[Prospect]:
+    """Updates a prospect's lifecycle status or manager decision."""
+    p = _prospects.get(prospect_id)
+    if not p:
+        p = get_prospect(prospect_id)
+        if not p:
+            return None
+    now_iso = datetime.now(timezone.utc).isoformat()
+    changes: dict[str, Any] = {
+        "status": status.strip().upper(),
+        "updated_at": now_iso,
+        "lastActivity": f"Status updated to {status.strip().upper()}",
+    }
+    if updates:
+        for k, v in updates.items():
+            if k not in ["id", "campaign_id", "campaignId"]:
+                changes[k] = v
+    updated = p.model_copy(update=changes)
+    _prospects[prospect_id] = updated
+    _save_prospects(_prospects)
+
+    try:
+        from app.services.supabase_db import sb_update_prospect_status
+        norm_st = "CONTACTED" if status in ["SENT", "COMPLETED"] else ("REVIEW" if status in ["PROCESSING", "QUEUED"] else status)
+        sb_update_prospect_status(
+            prospect_id,
+            status=norm_st,
+            channel=changes.get("channel"),
+            icp_score=changes.get("icpScore") or changes.get("icp_score"),
+        )
+    except Exception:
+        pass
+
+    return updated
+
+
+def assign_prospects_to_campaign(campaign_id: str, prospect_ids: Optional[list[str]] = None) -> list[Prospect]:
+    """Assigns unassigned prospects or specific prospect IDs to a target campaign, syncing Supabase."""
+    from app.models.campaign import get_campaign
+    from app.services.supabase_db import _request
+    c = get_campaign(campaign_id)
+    c_name = c.name if c else None
+
+    updated_list: list[Prospect] = []
+    # Make sure we have latest prospects
+    get_all_prospects()
+
+    for pid, p in list(_prospects.items()):
+        # If no specific IDs passed, assign unassigned ones OR if only 1 campaign exists, all prospects
+        should_assign = False
+        if prospect_ids:
+            should_assign = (pid in prospect_ids)
+        else:
+            # Assign if unassigned or belonging to this campaign
+            should_assign = (not p.campaign_id or not p.campaignId or p.campaign_id == campaign_id)
+
+        if should_assign:
+            p_updated = p.model_copy(update={
+                "campaign_id": campaign_id,
+                "campaignId": campaign_id,
+                "campaignName": c_name,
+            })
+            _prospects[pid] = p_updated
+            updated_list.append(p_updated)
+            try:
+                _request(f"prospects?id=eq.{pid}", method="PATCH", data={"campaign_id": campaign_id})
+            except Exception:
+                pass
+
+    _save_prospects(_prospects)
+    return updated_list

@@ -1,11 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
-export const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true';
-
-// Artificial delay to simulate network in demo mode
-export const fakeDelay = (ms = 400) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
 async function request<T>(
   path: string,
   options?: RequestInit

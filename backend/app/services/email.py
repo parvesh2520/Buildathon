@@ -2,6 +2,7 @@ import re
 import smtplib
 import uuid
 import logging
+import asyncio
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from email.mime.text import MIMEText
@@ -15,8 +16,9 @@ from app.config import (
     RESEND_API_KEY,
     RESEND_FROM_EMAIL,
     DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL,
+    EMAIL_PROVIDER,
 )
-from app.services.dronahq import call_email_executor
+from app.services.dronahq import call_email_executor, clean_agent_text
 import urllib.request
 import urllib.error
 import json
@@ -24,12 +26,41 @@ import json
 logger = logging.getLogger("sdr.email")
 
 
+def sanitize_email_address(email_str: str) -> str:
+    """
+    Cleans and normalizes email addresses to RFC 5321 compliance:
+    - Removes whitespace
+    - Replaces consecutive dots '..' with a single dot '.' in the local-part
+    - Strips leading/trailing dots from local-part
+    - Converts domain to lowercase
+    """
+    if not email_str or not isinstance(email_str, str):
+        return ""
+    email_str = email_str.strip()
+    if "@" not in email_str:
+        return email_str
+    parts = email_str.rsplit("@", 1)
+    local_part, domain = parts[0], parts[1].lower().strip()
+    # Replace multiple consecutive dots with a single dot and remove leading/trailing dots
+    clean_local = re.sub(r"\.+", ".", local_part).strip(".")
+    clean_domain = re.sub(r"\.+", ".", domain).strip(".")
+    return f"{clean_local}@{clean_domain}"
+
+
 def is_valid_email(email_str: str) -> bool:
-    """Validate standard email syntax."""
+    """Validate standard email syntax adhering to RFC 5321."""
     if not email_str or not isinstance(email_str, str):
         return False
-    email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-    return bool(re.match(email_regex, email_str.strip()))
+    email_str = email_str.strip()
+    if ".." in email_str or "@" not in email_str:
+        return False
+    parts = email_str.rsplit("@", 1)
+    local, domain = parts[0], parts[1]
+    if not local or not domain or local.startswith(".") or local.endswith(".") or domain.startswith(".") or domain.endswith("."):
+        return False
+    email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$"
+    return bool(re.match(email_regex, email_str))
+
 
 
 def is_email_configured() -> bool:
@@ -127,6 +158,41 @@ def build_responsive_html(subject: str, body_text: str) -> str:
 </html>"""
 
 
+def _send_via_smtp_direct(
+    recipient: str,
+    subject: str,
+    body_text: str,
+    body_html: str,
+    msg_id: str,
+    sender: str,
+) -> None:
+    """Delivers live email via configured Gmail SMTP directly to recipient."""
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = recipient
+    msg["Message-ID"] = f"<{msg_id}@{SMTP_SERVER}>"
+
+    part_text = MIMEText(body_text, "plain", "utf-8")
+    msg.attach(part_text)
+
+    part_html = MIMEText(body_html, "html", "utf-8")
+    msg.attach(part_html)
+
+    clean_password = SMTP_PASSWORD.replace(" ", "").strip()
+    if SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=8) as server:
+            server.login(SMTP_USERNAME, clean_password)
+            server.sendmail(sender, recipient, msg.as_string())
+    else:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=8) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(SMTP_USERNAME, clean_password)
+            server.sendmail(sender, recipient, msg.as_string())
+
+
 async def send_email(
     to_email: str,
     subject: str,
@@ -141,9 +207,9 @@ async def send_email(
     Supports DronaHQ Email Outreach Executor webhook, Resend HTTP API (Port 443),
     Gmail SMTP, and smart cloud-firewall fallback.
     """
-    clean_recipient = (to_email or "").strip()
-    clean_subject = (subject or "Message from SDR").strip()
-    clean_body = (content or "").strip()
+    clean_recipient = sanitize_email_address(to_email or "")
+    clean_subject = clean_agent_text(subject or "Message from SDR", ["subject_line", "subject"]) or "Message from SDR"
+    clean_body = clean_agent_text(content or "", ["message", "content", "body", "email_body"])
     timestamp = datetime.now(timezone.utc).isoformat()
     generated_msg_id = f"email_{uuid.uuid4().hex[:12]}"
 
@@ -160,14 +226,70 @@ async def send_email(
             "timestamp": timestamp,
         }
 
-    # 2. Try DronaHQ Email Outreach Executor if configured
+    # 2. Prioritize direct authenticated Gmail SMTP when EMAIL_PROVIDER is "gmail" (as originally implemented)
+    if (
+        EMAIL_PROVIDER.lower() == "gmail"
+        and is_email_configured()
+        and not (DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL and "test-email-executor" in DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL)
+    ):
+        html_content = body_html or build_responsive_html(clean_subject, clean_body)
+        sender = SENDER_EMAIL or SMTP_USERNAME or "sdr@example.com"
+        try:
+            await asyncio.to_thread(
+                _send_via_smtp_direct,
+                recipient=clean_recipient,
+                subject=clean_subject,
+                body_text=clean_body,
+                body_html=html_content,
+                msg_id=generated_msg_id,
+                sender=sender,
+            )
+            logger.info(f"[EMAIL SENT GMAIL] Delivered directly to {clean_recipient} via Gmail SMTP (msg_id: {generated_msg_id})")
+            return {
+                "channel": "EMAIL",
+                "status": "SENT",
+                "provider": "GMAIL_SMTP",
+                "provider_message_id": generated_msg_id,
+                "recipient": clean_recipient,
+                "error": None,
+                "subject": clean_subject,
+                "timestamp": timestamp,
+            }
+        except smtplib.SMTPAuthenticationError as e:
+            err_msg = f"SMTP Authentication failed: check Gmail App Password in .env ({e.smtp_error})"
+            logger.error(f"[EMAIL AUTH ERROR] {err_msg}")
+            return {
+                "channel": "EMAIL",
+                "status": "FAILED",
+                "provider": "GMAIL_SMTP",
+                "provider_message_id": None,
+                "recipient": clean_recipient,
+                "error": err_msg,
+                "subject": clean_subject,
+                "timestamp": timestamp,
+            }
+        except Exception as e:
+            logger.error(f"[EMAIL FAILED] SMTP Error sending to {clean_recipient}: {str(e)}")
+            return {
+                "channel": "EMAIL",
+                "status": "FAILED",
+                "provider": "GMAIL_SMTP",
+                "provider_message_id": None,
+                "recipient": clean_recipient,
+                "error": f"SMTP Error: {str(e)}",
+                "subject": clean_subject,
+                "timestamp": timestamp,
+            }
+
+    # 3. Try DronaHQ Email Outreach Executor if configured
     # FastAPI acts strictly as a dispatcher executing the AI recommendation via dedicated executor webhook
     if DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL and len(DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL.strip()) > 5:
         logger.info(
             f"[EMAIL DISPATCH] Dispatching via DronaHQ Email Outreach Executor to {clean_recipient} "
             f"(execution: {execution_id}, prospect: {prospect_id})..."
         )
-        executor_res = call_email_executor(
+        executor_res = await asyncio.to_thread(
+            call_email_executor,
             execution_id=execution_id or f"exec_{uuid.uuid4().hex[:10]}",
             campaign_id=campaign_id or "",
             prospect_id=prospect_id or "",
@@ -179,6 +301,23 @@ async def send_email(
             logger.info(
                 f"[EMAIL EXECUTOR CONFIRMED] Delivered to {clean_recipient} (id: {executor_res.get('provider_message_id')})"
             )
+            # If real Gmail SMTP credentials are configured in .env, also ensure live inbox delivery to clean_recipient
+            if is_email_configured():
+                try:
+                    html_content = body_html or build_responsive_html(clean_subject, clean_body)
+                    await asyncio.to_thread(
+                        _send_via_smtp_direct,
+                        recipient=clean_recipient,
+                        subject=clean_subject,
+                        body_text=clean_body,
+                        body_html=html_content,
+                        msg_id=generated_msg_id,
+                        sender=SENDER_EMAIL or SMTP_USERNAME or "sdr@example.com",
+                    )
+                    logger.info(f"[EMAIL REAL INBOX DISPATCH] Successfully delivered live email via Gmail SMTP to {clean_recipient}")
+                except Exception as smtp_err:
+                    logger.warning(f"[EMAIL REAL INBOX DISPATCH] Direct Gmail SMTP delivery notice: {smtp_err}")
+
             return {
                 "channel": "EMAIL",
                 "status": "SENT",
@@ -248,32 +387,14 @@ async def send_email(
 
     # 5. Attempt SMTP transmission
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = clean_subject
-        msg["From"] = sender
-        msg["To"] = clean_recipient
-        msg["Message-ID"] = f"<{generated_msg_id}@{SMTP_SERVER}>"
-
-        part_text = MIMEText(clean_body, "plain", "utf-8")
-        msg.attach(part_text)
-
-        part_html = MIMEText(html_content, "html", "utf-8")
-        msg.attach(part_html)
-
-        clean_password = SMTP_PASSWORD.replace(" ", "").strip()
-
-        # Handle SSL (port 465) vs TLS (port 587) with 8s timeout to avoid worker hang
-        if SMTP_PORT == 465:
-            with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=8) as server:
-                server.login(SMTP_USERNAME, clean_password)
-                server.sendmail(sender, clean_recipient, msg.as_string())
-        else:
-            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=8) as server:
-                server.ehlo()
-                server.starttls()
-                server.ehlo()
-                server.login(SMTP_USERNAME, clean_password)
-                server.sendmail(sender, clean_recipient, msg.as_string())
+        _send_via_smtp_direct(
+            recipient=clean_recipient,
+            subject=clean_subject,
+            body_text=clean_body,
+            body_html=html_content,
+            msg_id=generated_msg_id,
+            sender=sender,
+        )
 
         logger.info(f"[EMAIL SENT] Successfully delivered to {clean_recipient} (msg_id: {generated_msg_id})")
         return {

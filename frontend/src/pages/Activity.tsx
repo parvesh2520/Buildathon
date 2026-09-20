@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityEvent, ActivityCategory } from '@/types';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { demoActivity } from '@/data/demo/activity';
+import { getActivityEvents } from '@/api/sdr';
 import { cn } from '@/lib/utils';
 
 type Filter = ActivityCategory | 'all';
@@ -30,9 +30,19 @@ const categoryColors: Record<ActivityCategory, string> = {
 
 export function Activity() {
   const [filter, setFilter] = useState<Filter>('all');
+  const [activity, setActivity] = useState<ActivityEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getActivityEvents()
+      .then(setActivity)
+      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load activity'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filtered: ActivityEvent[] =
-    filter === 'all' ? demoActivity : demoActivity.filter((a) => a.category === filter);
+    filter === 'all' ? activity : activity.filter((a) => a.category === filter);
 
   return (
     <div className="p-6 max-w-[900px] mx-auto">
@@ -63,6 +73,15 @@ export function Activity() {
       <div className="relative">
         <div className="absolute left-[19px] top-0 bottom-0 w-px bg-border" />
         <div className="space-y-1">
+          {loading && (
+            <div className="card px-4 py-5 text-sm text-slate-500">Loading backend activity...</div>
+          )}
+          {error && (
+            <div className="card px-4 py-5 text-sm text-red-600">{error}</div>
+          )}
+          {!loading && !error && filtered.length === 0 && (
+            <div className="card px-4 py-5 text-sm text-slate-500">No backend execution activity found yet.</div>
+          )}
           {filtered.map((event) => (
             <div key={event.id} className="flex items-start gap-4 group">
               {/* dot */}

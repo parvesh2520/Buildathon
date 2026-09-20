@@ -16,6 +16,9 @@ class ExecutionRecord(BaseModel):
     actual_channel: Optional[str] = None
     action_type: Optional[str] = None
     provider_call_id: Optional[str] = None
+    touch_number: Optional[int] = None
+    followup_record_id: Optional[str] = None
+    agent_decision: Optional[Dict[str, Any]] = None
     started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     answered_at: Optional[str] = None
     ended_at: Optional[str] = None
@@ -68,11 +71,22 @@ _executions: Dict[str, ExecutionRecord] = _load_executions()
 
 
 def _to_db_payload(record: ExecutionRecord) -> Dict[str, Any]:
+    # Map telephony execution states to Supabase enum
+    db_status = record.status
+    if db_status in ["INITIATED", "RINGING", "IN_PROGRESS"]:
+        db_status = "RUNNING"
+    elif db_status in ["BUSY", "NO_ANSWER", "CANCELED"]:
+        db_status = "FAILED"
+    elif db_status in ["COMPLETED"]:
+        db_status = "SENT"
+
+    cid = record.campaign_id.strip() if record.campaign_id and record.campaign_id.strip() else None
+
     return {
         "id": record.execution_id,
-        "campaign_id": record.campaign_id,
+        "campaign_id": cid,
         "prospect_id": record.prospect_id,
-        "status": "FAILED" if record.status in ["BUSY", "NO_ANSWER", "CANCELED"] else record.status,
+        "status": db_status,
         "current_agent": record.current_agent,
         "recommended_channel": record.recommended_channel,
         "actual_channel": record.actual_channel,

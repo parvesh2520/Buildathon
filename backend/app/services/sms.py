@@ -11,6 +11,7 @@ from app.config import (
     TWILIO_AUTH_TOKEN,
     TWILIO_PHONE_NUMBER,
     DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL,
+    SMS_PROVIDER,
 )
 from app.services.dronahq import call_sms_executor
 
@@ -63,7 +64,15 @@ async def send_sms(
             "error": "SMS content is empty",
         }
 
-    # 3. Try DronaHQ SMS Outreach Executor if configured
+    # 3. Prioritize direct Twilio when SMS_PROVIDER is "twilio"
+    if SMS_PROVIDER.lower() == "twilio" and is_twilio_configured():
+        return await _send_via_twilio_direct(
+            clean_phone=clean_phone,
+            clean_content=clean_content,
+            prospect_id=prospect_id,
+        )
+
+    # 4. Try DronaHQ SMS Outreach Executor if configured
     # FastAPI acts strictly as a dispatcher executing the AI recommendation via dedicated executor webhook
     if DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL and len(DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL.strip()) > 5:
         # For Twilio trial accounts sending to Indian (+91) numbers, Twilio strictly requires
@@ -114,58 +123,64 @@ async def send_sms(
                 "error": str(err),
             }
 
-    # 4. Validation: 160-character limit enforcement (for direct Twilio path)
+    # 5. Nothing handled → PENDING_MANUAL
+    logger.info(
+        f"[SMS PENDING_MANUAL] No SMS provider configured. SMS queued for manual review. "
+        f"To: {clean_phone} | Content: '{clean_content}'"
+    )
+    return {
+        "channel": "SMS",
+        "status": "PENDING_MANUAL",
+        "provider_message_id": None,
+        "recipient": clean_phone,
+        "content": clean_content,
+        "error": "No SMS provider configured. Add SMS_PROVIDER=twilio and Twilio credentials to .env.",
+    }
+
+
+async def _send_via_twilio_direct(
+    clean_phone: str,
+    clean_content: str,
+    prospect_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Direct Twilio REST API delivery (primary SMS path when SMS_PROVIDER=twilio)."""
+    # Enforce 160-character limit
     if len(clean_content) > 160:
         clean_content = clean_content[:157].rstrip() + "..."
         logger.info(f"[SMS TRUNCATE] Truncated SMS content to 160 chars for prospect {prospect_id}")
 
-    # 5. If Twilio is unconfigured, return PENDING_MANUAL
-    if not is_twilio_configured():
-        logger.info(
-            f"[SMS PENDING_MANUAL] Twilio credentials not configured. SMS queued for manual review. "
-            f"To: {clean_phone} | Content: '{clean_content}'"
-        )
-        return {
-            "channel": "SMS",
-            "status": "PENDING_MANUAL",
-            "provider_message_id": None,
-            "recipient": clean_phone,
-            "content": clean_content,
-            "error": "Twilio credentials not configured in backend .env. SMS queued for manual execution.",
-        }
-
-    # 5. Execute via Twilio REST API
     url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
-    data = urllib.parse.urlencode({
-        "To": clean_phone,
-        "From": TWILIO_PHONE_NUMBER,
-        "Body": clean_content,
-    }).encode("utf-8")
-
     auth_str = f"{TWILIO_ACCOUNT_SID}:{TWILIO_AUTH_TOKEN}"
     b64_auth = base64.b64encode(auth_str.encode("utf-8")).decode("ascii")
 
-    req = urllib.request.Request(
-        url=url,
-        data=data,
-        headers={
-            "Authorization": f"Basic {b64_auth}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        method="POST",
-    )
+    def _build_req(body_text: str) -> urllib.request.Request:
+        data = urllib.parse.urlencode({
+            "To": clean_phone,
+            "From": TWILIO_PHONE_NUMBER,
+            "Body": body_text,
+        }).encode("utf-8")
+        return urllib.request.Request(
+            url=url,
+            data=data,
+            headers={
+                "Authorization": f"Basic {b64_auth}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            method="POST",
+        )
 
     try:
-        with urllib.request.urlopen(req, timeout=15) as res:
-            res_body = res.read().decode("utf-8")
-            parsed = json.loads(res_body)
+        with urllib.request.urlopen(_build_req(clean_content), timeout=15) as res:
+            parsed = json.loads(res.read().decode("utf-8"))
             msg_sid = parsed.get("sid", f"SM_{uuid.uuid4().hex[:12]}")
-            logger.info(f"[SMS SENT] Successfully dispatched to {clean_phone} via Twilio (SID: {msg_sid})")
+            logger.info(f"[SMS SENT] Dispatched to {clean_phone} via Twilio (SID: {msg_sid})")
             return {
                 "channel": "SMS",
                 "status": "SENT",
+                "provider": "TWILIO",
                 "provider_message_id": msg_sid,
                 "recipient": clean_phone,
+                "content": clean_content,
                 "error": None,
             }
 
@@ -183,35 +198,21 @@ async def send_sms(
         # If trial account template restriction (error 572006), retry with Twilio trial template
         if err_code == 572006:
             logger.warning(
-                f"[SMS TRIAL FALLBACK] Twilio trial account requires predefined template. "
-                f"Retrying with approved trial template 'sms_appointment_reminders'..."
-            )
-            fallback_data = urllib.parse.urlencode({
-                "To": clean_phone,
-                "From": TWILIO_PHONE_NUMBER,
-                "Body": "sms_appointment_reminders",
-            }).encode("utf-8")
-            fallback_req = urllib.request.Request(
-                url=url,
-                data=fallback_data,
-                headers={
-                    "Authorization": f"Basic {b64_auth}",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                method="POST",
+                "[SMS TRIAL FALLBACK] Twilio trial account requires predefined template. "
+                "Retrying with approved trial template 'sms_appointment_reminders'..."
             )
             try:
-                with urllib.request.urlopen(fallback_req, timeout=15) as fb_res:
-                    fb_body = fb_res.read().decode("utf-8")
-                    parsed_fb = json.loads(fb_body)
+                with urllib.request.urlopen(_build_req("sms_appointment_reminders"), timeout=15) as fb_res:
+                    parsed_fb = json.loads(fb_res.read().decode("utf-8"))
                     msg_sid = parsed_fb.get("sid", f"SM_{uuid.uuid4().hex[:12]}")
                     logger.info(
-                        f"[SMS SENT (TRIAL TEMPLATE)] Successfully dispatched to {clean_phone} "
+                        f"[SMS SENT (TRIAL TEMPLATE)] Dispatched to {clean_phone} "
                         f"via Twilio trial template (SID: {msg_sid})"
                     )
                     return {
                         "channel": "SMS",
                         "status": "SENT",
+                        "provider": "TWILIO",
                         "provider_message_id": msg_sid,
                         "recipient": clean_phone,
                         "content": clean_content,
@@ -224,15 +225,18 @@ async def send_sms(
         return {
             "channel": "SMS",
             "status": "FAILED",
+            "provider": "TWILIO",
             "provider_message_id": None,
             "recipient": clean_phone,
             "error": err_message,
         }
+
     except Exception as e:
         logger.error(f"[SMS FAILED] Unexpected error sending SMS: {str(e)}")
         return {
             "channel": "SMS",
             "status": "FAILED",
+            "provider": "TWILIO",
             "provider_message_id": None,
             "recipient": clean_phone,
             "error": f"Twilio connection error: {str(e)}",

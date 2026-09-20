@@ -2,20 +2,26 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Megaphone,
+  Compass,
   Users,
   Bot,
   Activity,
   BarChart3,
   Settings,
   Zap,
+  Inbox,
+  BrainCircuit,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/campaigns', icon: Megaphone, label: 'Campaigns' },
+  { to: '/discovery', icon: Compass, label: 'Prospect Discovery' },
   { to: '/prospects', icon: Users, label: 'Prospects' },
   { to: '/agents', icon: Bot, label: 'Agents' },
+  { to: '/inbox', icon: Inbox, label: 'Inbox' },
+  { to: '/chatbot', icon: BrainCircuit, label: 'Intelligence Desk' },
   { to: '/activity', icon: Activity, label: 'Activity' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
 ];

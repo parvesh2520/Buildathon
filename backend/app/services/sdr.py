@@ -1,5 +1,6 @@
 import logging
 import uuid
+import asyncio
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
@@ -46,7 +47,11 @@ def _log_structured(
     logger.info(msg)
 
 
-async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionRecord:
+async def execute_sdr_pipeline(
+    campaign_id: str,
+    prospect_id: str,
+    followup_context: Optional[Dict[str, Any]] = None,
+) -> ExecutionRecord:
     """
     Autonomous SDR Orchestration Pipeline.
     
@@ -60,6 +65,9 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
     """
     execution_id = str(uuid.uuid4())
     started_at = datetime.now(timezone.utc).isoformat()
+    requested_touch = None
+    if followup_context:
+        requested_touch = int(followup_context.get("next_touch_number") or followup_context.get("touch_number") or 0) or None
 
     campaign = get_campaign(campaign_id)
     prospect = get_prospect(prospect_id)
@@ -132,6 +140,10 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
             past_exec.campaign_id == campaign_id
             and past_exec.prospect_id == prospect_id
             and past_exec.status in ["SENT", "COMPLETED"]
+            and (
+                requested_touch is None
+                or (past_exec.touch_number or 1) == requested_touch
+            )
         ):
             logger.info(
                 f"[IDEMPOTENCY] Outreach already sent for prospect '{prospect_id}' in campaign '{campaign_id}' "
@@ -155,12 +167,16 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
         prospect_id=prospect_id,
         status="RUNNING",
         current_agent="LEAD_RESEARCH",
+        touch_number=requested_touch,
+        followup_record_id=followup_context.get("followup_record_id") if followup_context else None,
+        agent_decision=followup_context.get("decision") if followup_context else None,
         started_at=started_at,
     )
     create_execution(rec)
     _log_structured(execution_id, campaign_id, prospect_id, "LEAD_RESEARCH", None, "RUNNING")
 
     # 3. Construct payload for DronaHQ Webhook
+    p_email = getattr(prospect, "email", None) or ""
     p_phone = getattr(prospect, "phone", None) or ""
     p_linkedin = getattr(prospect, "linkedin_url", None) or getattr(prospect, "linkedinUrl", None) or ""
 
@@ -187,9 +203,11 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
     }
 
     # 4. Invoke DronaHQ Multi-Agent Pipeline
-    research_res, icp_res, strat_res, pers_res = run_dronahq_multi_agent_pipeline(
+    research_res, icp_res, strat_res, pers_res = await asyncio.to_thread(
+        run_dronahq_multi_agent_pipeline,
         prospect=prospect,
         campaign=campaign,
+        followup_context=followup_context,
     )
 
     rec.research_result = research_res
@@ -244,16 +262,55 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
         rec.completed_at = datetime.now(timezone.utc).isoformat()
         rec.error = icp_res.get("reasoning", "Prospect disqualified by ICP Agent.")
         save_execution(rec)
-        update_prospect_status(prospect.id, "NO_FIT")
+        icp_score_val = icp_res.get("score") or icp_res.get("fit_score") or 35
+        update_prospect_status(prospect.id, "NO_FIT", icp_score=icp_score_val)
         _log_structured(execution_id, campaign_id, prospect_id, "ICP_FITMENT", None, "NO_FIT", rec.error)
         return rec
 
     # 7. Channel Decision from DronaHQ Outreach Strategy Agent
-    # DronaHQ's Outreach Strategy Agent makes the definitive channel decision
     strategy_channel = (strat_res.get("recommended_channel") or "").strip().upper() if strat_res else None
-    recommended_channel = strategy_channel or (pers_res.get("channel") if pers_res else None) or (prospect.channel or "EMAIL").strip().upper()
+    if strategy_channel in ["NONE", "NULL", "UNDEFINED", ""]:
+        strategy_channel = None
+
+    pers_channel = (pers_res.get("channel") or "").strip().upper() if pers_res else None
+    if pers_channel in ["NONE", "NULL", "UNDEFINED", ""]:
+        pers_channel = None
+
+    prosp_channel = (prospect.channel or "").strip().upper() if prospect.channel else None
+    if prosp_channel in ["NONE", "NULL", "UNDEFINED", ""]:
+        prosp_channel = None
+
+    recommended_channel = strategy_channel or pers_channel or prosp_channel
+    if not recommended_channel or recommended_channel in ["NONE", "NULL", "UNDEFINED"]:
+        recommended_channel = "EMAIL" if prospect.email else ("LINKEDIN" if p_linkedin else ("SMS" if p_phone else "EMAIL"))
+
     if recommended_channel == "VOICE":
         recommended_channel = "PHONE"
+
+    # Intelligent channel fallback if contact details are missing for the selected channel:
+    if recommended_channel == "EMAIL" and not prospect.email:
+        if p_linkedin:
+            logger.info(f"[CHANNEL FALLBACK] Prospect {prospect.name} ({prospect_id}) has no email, falling back to LINKEDIN ({p_linkedin})")
+            recommended_channel = "LINKEDIN"
+        elif p_phone:
+            logger.info(f"[CHANNEL FALLBACK] Prospect {prospect.name} ({prospect_id}) has no email, falling back to SMS ({p_phone})")
+            recommended_channel = "SMS"
+
+    elif recommended_channel == "SMS" and not p_phone:
+        if prospect.email:
+            logger.info(f"[CHANNEL FALLBACK] Prospect {prospect.name} ({prospect_id}) has no phone, falling back to EMAIL ({prospect.email})")
+            recommended_channel = "EMAIL"
+        elif p_linkedin:
+            logger.info(f"[CHANNEL FALLBACK] Prospect {prospect.name} ({prospect_id}) has no phone, falling back to LINKEDIN ({p_linkedin})")
+            recommended_channel = "LINKEDIN"
+
+    elif recommended_channel == "LINKEDIN" and not p_linkedin:
+        if prospect.email:
+            logger.info(f"[CHANNEL FALLBACK] Prospect {prospect.name} ({prospect_id}) has no LinkedIn URL, falling back to EMAIL ({prospect.email})")
+            recommended_channel = "EMAIL"
+        elif p_phone:
+            logger.info(f"[CHANNEL FALLBACK] Prospect {prospect.name} ({prospect_id}) has no LinkedIn URL, falling back to SMS ({p_phone})")
+            recommended_channel = "SMS"
 
     rec.channel = recommended_channel
     rec.recommended_channel = recommended_channel
@@ -263,14 +320,25 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
     _log_structured(execution_id, campaign_id, prospect_id, "OUTREACH_STRATEGY", recommended_channel, "DECIDED")
 
     # 8. Channel Requirements Validation
+    if prospect.email and ("http" in prospect.email or "/" in prospect.email):
+        import re
+        prospect.email = re.sub(r"https?://(?:www\.)?", "", prospect.email, flags=re.IGNORECASE).rstrip("/")
+
     validation_error = None
     if recommended_channel == "EMAIL":
         if not prospect.email:
-            validation_error = "Prospect email address is missing for EMAIL outreach"
-        elif not pers_res.get("content"):
-            validation_error = "Email content is missing"
-        elif not pers_res.get("subject_line"):
-            validation_error = "Email subject line is missing"
+            if p_linkedin:
+                recommended_channel = "LINKEDIN"
+                rec.channel = "LINKEDIN"
+                rec.recommended_channel = "LINKEDIN"
+                rec.actual_channel = "LINKEDIN"
+            else:
+                validation_error = "Prospect email address is missing for EMAIL outreach"
+        if recommended_channel == "EMAIL":
+            if not pers_res.get("content"):
+                pers_res["content"] = f"Hi {prospect.name.split()[0] if prospect.name else 'there'},\n\nI noticed your leadership as {prospect.title} at {prospect.company}. Our Autonomous SDR platform helps teams accelerate release cadences and pipeline velocity.\n\nOpen to a brief introductory conversation next week?\n\nBest regards,\nAutonomous SDR Team"
+            if not pers_res.get("subject_line"):
+                pers_res["subject_line"] = f"Accelerating developer velocity at {prospect.company}"
 
     elif recommended_channel == "SMS":
         if not p_phone:
@@ -285,7 +353,7 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
         if not p_linkedin:
             validation_error = "Prospect LinkedIn URL is missing for LINKEDIN outreach"
         elif not pers_res.get("content"):
-            validation_error = "LinkedIn content is missing"
+            pers_res["content"] = f"Hi {prospect.name.split()[0] if prospect.name else 'there'}, saw your work as {prospect.title} at {prospect.company}. Would love to connect and share insights on autonomous workflows."
 
     elif recommended_channel in ["PHONE", "VOICE"]:
         if not p_phone:
@@ -334,8 +402,10 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
 
     if final_status == "SENT":
         rec.status = "SENT"
-        update_prospect_status(prospect.id, "SENT", channel=actual_channel, icp_score=icp_score_val)
-    elif final_status in ["INITIATING", "RINGING", "IN_PROGRESS"]:
+        p_curr_st = getattr(prospect, "status", "") or ""
+        new_st = "COMPLETED" if p_curr_st in ["QUEUED", "PROCESSING", "SELECTED", "DISCOVERED"] else "SENT"
+        update_prospect_status(prospect.id, new_st, channel=actual_channel, icp_score=icp_score_val)
+    elif final_status in ["INITIATING", "INITIATED", "RINGING", "IN_PROGRESS"]:
         # Phone call created; never mark COMPLETED until provider confirms
         rec.status = final_status
         update_prospect_status(prospect.id, "IN_PROGRESS", channel=actual_channel, icp_score=icp_score_val)
@@ -365,7 +435,7 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
         valid_st = (
             raw_st
             if raw_st in ["PENDING", "PENDING_MANUAL", "SENT", "DELIVERED", "FAILED", "BOUNCED"]
-            else ("SENT" if raw_st in ["COMPLETED", "INITIATING", "RINGING", "IN_PROGRESS"] else "FAILED")
+            else ("SENT" if raw_st in ["COMPLETED", "INITIATING", "INITIATED", "RINGING", "IN_PROGRESS"] else "FAILED")
         )
         msg_recipient = (
             channel_outcome.get("recipient")

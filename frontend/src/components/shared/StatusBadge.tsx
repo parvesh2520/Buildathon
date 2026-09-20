@@ -21,7 +21,11 @@ const variantStyles: Record<string, string> = {
   LIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   PAUSED: 'bg-amber-50 text-amber-700 border-amber-200',
   COMPLETED: 'bg-slate-100 text-slate-600 border-slate-200',
-  // Prospect
+  // Prospect & Discovery
+  DISCOVERED: 'bg-sky-50 text-sky-700 border-sky-200',
+  SELECTED: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  QUEUED: 'bg-amber-50 text-amber-700 border-amber-200',
+  PROCESSING: 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse',
   FIT: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   REVIEW: 'bg-amber-50 text-amber-700 border-amber-200',
   NO_FIT: 'bg-red-50 text-red-600 border-red-200',

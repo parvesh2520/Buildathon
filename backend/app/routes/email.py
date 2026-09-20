@@ -43,4 +43,10 @@ async def send_test_email(req: TestEmailRequest):
         content=req.body,
         body_html=f"<h3>{req.subject}</h3><p>{req.body}</p><hr/><small>Sent via Autonomous SDR Platform</small>"
     )
+    if res.get("status") == "SENT":
+        return {
+            "status": "success",
+            "message": f"Email delivered successfully to {req.to_email}",
+            "details": res,
+        }
     return res

@@ -47,12 +47,12 @@ export function Settings() {
     setSendingTest(true);
     try {
       const res = await sendTestEmail(testEmailAddr);
-      if (res.status === 'success') {
+      if (res.status === 'success' || (res as any).status === 'SENT') {
         toast.success(`Success! Email delivered to ${testEmailAddr}`);
       } else if (res.status === 'mocked') {
         toast.success(res.message);
       } else {
-        toast.error(res.message);
+        toast.error(res.message || 'Failed to send test email');
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to send test email';

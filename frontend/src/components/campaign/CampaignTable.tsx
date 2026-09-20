@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, MoreHorizontal, Copy } from 'lucide-react';
 import { Campaign } from '@/types';
-import { StatusBadge } from '@/components/shared/StatusBadge';
-import { updateCampaignStatus, duplicateCampaign } from '@/api/campaigns';
+import { updateCampaignStatus, duplicateCampaign, deleteCampaign } from '@/api/campaigns';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
 interface CampaignTableProps {
   campaigns: Campaign[];
   onStatusChange: (id: string, status: Campaign['status']) => void;
+  onDeleted?: (id: string) => void;
 }
 
 function StatusToggle({
@@ -39,7 +38,11 @@ function StatusToggle({
   };
 
   if (campaign.status === 'COMPLETED') {
-    return <StatusBadge status="COMPLETED" />;
+    return (
+      <span className="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+        Completed
+      </span>
+    );
   }
 
   return (
@@ -48,7 +51,7 @@ function StatusToggle({
       disabled={loading}
       className={cn(
         'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none',
-        isLive ? 'bg-emerald-500' : 'bg-slate-200',
+        isLive ? 'bg-tertiary' : 'bg-surface-container-high',
         loading && 'opacity-50 cursor-not-allowed'
       )}
       title={isLive ? 'Click to pause' : 'Click to activate'}
@@ -63,22 +66,37 @@ function StatusToggle({
   );
 }
 
-export function CampaignTable({ campaigns, onStatusChange }: CampaignTableProps) {
+export function CampaignTable({ campaigns, onStatusChange, onDeleted }: CampaignTableProps) {
   const navigate = useNavigate();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (campaign: Campaign) => {
+    if (!window.confirm(`Delete campaign "${campaign.name}"?`)) return;
+    setDeletingId(campaign.id);
+    try {
+      await deleteCampaign(campaign.id);
+      toast.success(`Deleted ${campaign.name}`);
+      onDeleted?.(campaign.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete campaign');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
-    <div className="card overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="rounded-2xl bg-surface-container-lowest shadow-sm overflow-hidden border border-outline-variant/10">
+      <table className="w-full">
         <thead>
-          <tr className="border-b border-border bg-surface-secondary">
-            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Campaign</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">ICP</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Prospects</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Messages</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Replies</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Meetings</th>
-            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Activity</th>
+          <tr className="border-b border-outline-variant/20 bg-surface-container/50">
+            <th className="px-4 py-3 text-left font-label-sm text-label-sm uppercase tracking-wider text-outline">Campaign</th>
+            <th className="px-4 py-3 text-left font-label-sm text-label-sm uppercase tracking-wider text-outline">ICP</th>
+            <th className="px-4 py-3 text-right font-label-sm text-label-sm uppercase tracking-wider text-outline">Prospects</th>
+            <th className="px-4 py-3 text-right font-label-sm text-label-sm uppercase tracking-wider text-outline">Messages</th>
+            <th className="px-4 py-3 text-right font-label-sm text-label-sm uppercase tracking-wider text-outline">Replies</th>
+            <th className="px-4 py-3 text-right font-label-sm text-label-sm uppercase tracking-wider text-outline">Meetings</th>
+            <th className="px-4 py-3 text-center font-label-sm text-label-sm uppercase tracking-wider text-outline">Status</th>
+            <th className="px-4 py-3 text-left font-label-sm text-label-sm uppercase tracking-wider text-outline">Last Activity</th>
             <th className="px-4 py-3" />
           </tr>
         </thead>
@@ -86,29 +104,27 @@ export function CampaignTable({ campaigns, onStatusChange }: CampaignTableProps)
           {campaigns.map((c) => (
             <tr
               key={c.id}
-              className="table-row-hover border-b border-border-light last:border-0"
+              className="border-b border-outline-variant/10 last:border-0 hover:bg-surface-container/40 cursor-pointer transition-colors"
               onClick={() => navigate(`/campaigns/${c.id}`)}
             >
-              <td className="px-4 py-3">
-                <div>
-                  <p className="font-medium text-slate-800">{c.name}</p>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">{c.id}</p>
-                </div>
+              <td className="px-4 py-3.5">
+                <p className="font-label-md text-label-md text-on-surface font-medium">{c.name}</p>
+                <p className="font-label-sm text-label-sm text-outline font-mono mt-0.5 truncate max-w-[200px]">{c.id}</p>
               </td>
-              <td className="px-4 py-3">
-                <p className="text-slate-600 text-xs max-w-[180px] truncate" title={c.icp}>{c.icp}</p>
+              <td className="px-4 py-3.5">
+                <p className="font-body-sm text-body-sm text-on-surface-variant max-w-[180px] truncate" title={c.icp}>{c.icp}</p>
               </td>
-              <td className="px-4 py-3 text-right tabular-nums text-slate-700">{(c.prospects ?? 0).toLocaleString()}</td>
-              <td className="px-4 py-3 text-right tabular-nums text-slate-700">{(c.messages ?? 0).toLocaleString()}</td>
-              <td className="px-4 py-3 text-right tabular-nums text-slate-700">{c.replies ?? 0}</td>
-              <td className="px-4 py-3 text-right tabular-nums text-slate-700">{c.meetings ?? 0}</td>
-              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-center gap-2">
+              <td className="px-4 py-3.5 text-right font-label-md text-label-md text-on-surface tabular-nums">{(c.prospects ?? 0).toLocaleString()}</td>
+              <td className="px-4 py-3.5 text-right font-label-md text-label-md text-on-surface tabular-nums">{(c.messages ?? 0).toLocaleString()}</td>
+              <td className="px-4 py-3.5 text-right font-label-md text-label-md text-on-surface tabular-nums">{c.replies ?? 0}</td>
+              <td className="px-4 py-3.5 text-right font-label-md text-label-md text-on-surface tabular-nums">{c.meetings ?? 0}</td>
+              <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-center">
                   <StatusToggle campaign={c} onStatusChange={onStatusChange} />
                 </div>
               </td>
-              <td className="px-4 py-3 text-xs text-slate-400">{c.lastActivity ?? '—'}</td>
-              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+              <td className="px-4 py-3.5 font-body-sm text-body-sm text-outline">{c.lastActivity ?? '—'}</td>
+              <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-end gap-2">
                   <button
                     onClick={async () => {
@@ -120,12 +136,20 @@ export function CampaignTable({ campaigns, onStatusChange }: CampaignTableProps)
                         toast.error('Failed to duplicate');
                       }
                     }}
-                    className="p-1 rounded text-slate-400 hover:text-brand hover:bg-slate-100 cursor-pointer"
-                    title="Duplicate as Variant"
+                    className="p-1.5 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
+                    title="Duplicate"
                   >
-                    <Copy size={13} />
+                    <span className="material-symbols-outlined text-[16px]">content_copy</span>
                   </button>
-                  <ChevronRight size={14} className="text-slate-300" />
+                  <button
+                    onClick={() => handleDelete(c)}
+                    disabled={deletingId === c.id}
+                    className="p-1.5 rounded-lg text-outline hover:text-rose-600 hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Delete campaign"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
+                  <span className="material-symbols-outlined text-[18px] text-outline">chevron_right</span>
                 </div>
               </td>
             </tr>

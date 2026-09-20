@@ -50,4 +50,5 @@ Thumbs.db
 
 # Agent and temporary files
 .gemini/
+.claude/
 *.log

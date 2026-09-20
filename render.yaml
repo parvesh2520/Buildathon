@@ -12,10 +12,9 @@ services:
         value: 3.11.9
       - key: APP_ENV
         value: production
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_KEY
-        sync: false
+      # Email: Gmail SMTP (Render free tier blocks port 587 — add RESEND_API_KEY for live sends)
+      - key: EMAIL_PROVIDER
+        value: gmail
       - key: SMTP_SERVER
         value: smtp.gmail.com
       - key: SMTP_PORT
@@ -26,13 +25,46 @@ services:
         sync: false
       - key: SENDER_EMAIL
         sync: false
+      # Resend HTTP API — bypasses Render SMTP firewall (optional but recommended)
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      # DronaHQ Agents
+      - key: DRONAHQ_WEBHOOK_URL
+        value: https://automations.dronahq.com/webhook/6aae11050d2831ebfde39bf5
+      - key: DRONAHQ_API_KEY
+        sync: false
+      - key: DRONAHQ_LEAD_RESEARCH_URL
+        sync: false
+      - key: DRONAHQ_LEAD_RESEARCH_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DRONAHQ_ICP_FITMENT_URL
+        sync: false
+      - key: DRONAHQ_ICP_FITMENT_KEY
+        sync: false
+      - key: DRONAHQ_OUTREACH_STRATEGY_URL
+        sync: false
+      - key: DRONAHQ_OUTREACH_STRATEGY_KEY
+        sync: false
+      - key: DRONAHQ_PERSONALISATION_URL
+        sync: false
+      - key: DRONAHQ_PERSONALISATION_KEY
+        sync: false
+      # Twilio
       - key: TWILIO_ACCOUNT_SID
         sync: false
       - key: TWILIO_AUTH_TOKEN
         sync: false
       - key: TWILIO_PHONE_NUMBER
         sync: false
-      - key: DRONAHQ_WEBHOOK_URL
-        value: https://automations.dronahq.com/webhook/6aae11050d2831ebfde39bf5
+      # Supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      # Backend public URL (set this to your Render service URL)
       - key: BACKEND_BASE_URL
         sync: false

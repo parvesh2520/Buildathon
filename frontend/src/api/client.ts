@@ -1,20 +1,24 @@
-const DEFAULT_LOCAL_API = 'http://localhost:8000';
+// The deployed Render backend URL (fallback when VITE_API_BASE_URL is not set in Vercel env vars)
+const RENDER_BACKEND_URL = 'https://autonomous-sdr-backend.onrender.com';
+
 const configuredApiUrl = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/$/, '');
-const BASE_URL = configuredApiUrl ||
-  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? DEFAULT_LOCAL_API
-    : '');
+
+const BASE_URL = configuredApiUrl
+  || (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8000'
+    : RENDER_BACKEND_URL);
+
+// Demo mode — set VITE_DEMO_MODE=true in Vercel env vars to disable real API calls
+export const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true';
+
+export async function fakeDelay(ms = 800): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function request<T>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
-  if (!BASE_URL) {
-    throw new Error(
-      'API base URL is not configured. Set VITE_API_BASE_URL to your Render backend URL, for example: https://your-app.onrender.com'
-    );
-  }
-
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...options,

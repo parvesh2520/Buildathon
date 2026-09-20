@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { GlobalKillSwitchBanner } from './GlobalKillSwitchBanner';
 import { useEffect } from 'react';
 import { getStoredSession } from '@/lib/auth';
+import { SdrCopilotOverlay } from '@/components/SdrCopilotOverlay';
 
 export function AppLayout() {
   const navigate = useNavigate();
@@ -48,6 +49,9 @@ export function AppLayout() {
           success: { iconTheme: { primary: '#e6a219', secondary: '#ffffff' } },
         }}
       />
+
+      {/* Floating SDR Copilot Chatbot Overlay */}
+      <SdrCopilotOverlay />
     </div>
   );
 }

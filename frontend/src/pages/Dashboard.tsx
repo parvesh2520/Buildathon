@@ -32,6 +32,16 @@ export function Dashboard() {
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [escalationTab, setEscalationTab] = useState('All');
 
+  const triggerCopilot = (queryText?: string) => {
+    const q = (queryText || assistantInput).trim();
+    if (!q) {
+      window.dispatchEvent(new CustomEvent('open-sdr-copilot', { detail: {} }));
+      return;
+    }
+    setAssistantInput(q);
+    window.dispatchEvent(new CustomEvent('open-sdr-copilot', { detail: { query: q } }));
+  };
+
   useEffect(() => {
     getProspects().then(setProspects).catch(() => {});
   }, []);
@@ -139,9 +149,14 @@ export function Dashboard() {
                 </p>
               </div>
             </div>
-            <span className="rounded-full bg-white px-4 py-2 text-xs font-bold text-[#366853] shadow-sm">
-              Live Knowledge Graph Active
-            </span>
+            <button
+              onClick={() => triggerCopilot()}
+              className="rounded-full bg-white px-4 py-2 text-xs font-bold text-[#366853] shadow-sm hover:bg-[#edf4f0] transition-colors flex items-center gap-2 cursor-pointer"
+              title="Open SDR Copilot AI"
+            >
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              SDR Copilot AI Active
+            </button>
           </div>
 
           <div className="flex items-center gap-3 rounded-2xl border border-[#d7c8b0] bg-white px-4 py-3 shadow-[0_10px_25px_rgba(55,43,23,0.1)]">
@@ -151,21 +166,17 @@ export function Dashboard() {
               value={assistantInput}
               onChange={(event) => setAssistantInput(event.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && assistantInput.trim()) {
-                  navigate(`/chatbot?q=${encodeURIComponent(assistantInput.trim())}`);
+                if (e.key === 'Enter') {
+                  triggerCopilot();
                 }
               }}
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#8b8174]"
               placeholder="Ask anything across leads, transcripts, objections, and call logs..."
             />
             <button
-              onClick={() => {
-                if (assistantInput.trim()) {
-                  navigate(`/chatbot?q=${encodeURIComponent(assistantInput.trim())}`);
-                }
-              }}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6a219] text-[#2a2110] shadow-sm hover:bg-[#d69213] transition-colors"
-              title="Search with AI Assistant"
+              onClick={() => triggerCopilot()}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6a219] text-[#2a2110] shadow-sm hover:bg-[#d69213] transition-colors cursor-pointer"
+              title="Query SDR Copilot AI"
             >
               <span className="material-symbols-outlined text-[22px]">arrow_upward</span>
             </button>
@@ -176,8 +187,8 @@ export function Dashboard() {
             {starterPrompts.map((chip) => (
               <button
                 key={chip}
-                onClick={() => setAssistantInput(chip)}
-                className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#51483d] shadow-sm"
+                onClick={() => triggerCopilot(chip)}
+                className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#51483d] shadow-sm hover:bg-[#f6efe4] transition-colors cursor-pointer"
               >
                 {chip}
               </button>

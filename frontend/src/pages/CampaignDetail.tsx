@@ -128,7 +128,12 @@ export function CampaignDetail() {
       window.dispatchEvent(new CustomEvent('prospects-updated', { detail: { campaignId: campaign.id } }));
     } catch (err) {
       console.error('Agent 0 discovery notice:', err);
-      toast.error('Agent 0 discovery notice: check campaign prospects', {
+      const message =
+        err instanceof Error && err.message.includes('VITE_API_BASE_URL')
+          ? 'Agent 0 could not reach the backend. Add VITE_API_BASE_URL to your Vercel environment pointing to your Render API.'
+          : 'Agent 0 discovery notice: check campaign prospects';
+
+      toast.error(message, {
         id: `agent-0-${campaign.id}`,
       });
     } finally {

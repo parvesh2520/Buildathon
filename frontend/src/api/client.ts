@@ -1,9 +1,20 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+const DEFAULT_LOCAL_API = 'http://localhost:8000';
+const configuredApiUrl = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/$/, '');
+const BASE_URL = configuredApiUrl ||
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? DEFAULT_LOCAL_API
+    : '');
 
 async function request<T>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
+  if (!BASE_URL) {
+    throw new Error(
+      'API base URL is not configured. Set VITE_API_BASE_URL to your Render backend URL, for example: https://your-app.onrender.com'
+    );
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...options,

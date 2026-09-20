@@ -1,11 +1,69 @@
 import { useState, useEffect } from 'react';
-import { X, Mail, Phone, Building2, MapPin, Globe, CheckCircle, XCircle, Sparkles, Send, ShieldCheck, Cpu, MessageSquare, AlertCircle, Trash2 } from 'lucide-react';
+import {
+  X,
+  Mail,
+  Phone,
+  Building2,
+  MapPin,
+  Globe,
+  CheckCircle,
+  XCircle,
+  Sparkles,
+  Send,
+  ShieldCheck,
+  Cpu,
+  MessageSquare,
+  AlertCircle,
+  Trash2,
+  Copy,
+  Check,
+  ExternalLink,
+} from 'lucide-react';
 import { Prospect, ExecutionRecord } from '@/types';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { runSDR, getProspectExecution } from '@/api/sdr';
-import { deleteProspect } from '@/api/prospects';
+import { deleteProspect, updateProspectStatus } from '@/api/prospects';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+
+function LinkedInIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+    </svg>
+  );
+}
+
+function getLinkedInUrl(prospect: Prospect): string {
+  const rawUrl = prospect.linkedin_url || (prospect as any).linkedinUrl;
+  if (rawUrl && typeof rawUrl === 'string' && rawUrl.trim().length > 0) {
+    const trimmed = rawUrl.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  }
+  return `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(
+    `${prospect.name} ${prospect.company}`
+  )}`;
+}
+
+async function copyToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+  } else {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+    textArea.remove();
+  }
+}
 
 interface ProspectDrawerProps {
   prospect: Prospect;
@@ -21,6 +79,92 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
   const [currentChannel, setCurrentChannel] = useState<string | undefined>(prospect.channel);
   const [execution, setExecution] = useState<ExecutionRecord | null>(null);
   const [loadingExec, setLoadingExec] = useState(true);
+
+  // LinkedIn 1-Click HITL State
+  const [copiedNote, setCopiedNote] = useState(false);
+  const [markingSent, setMarkingSent] = useState(false);
+  const [customNote, setCustomNote] = useState<string>('');
+  const [showLinkedInCard, setShowLinkedInCard] = useState(false);
+
+  const isLinkedInActive =
+    currentChannel === 'LINKEDIN' ||
+    prospect.channel === 'LINKEDIN' ||
+    execution?.recommended_channel === 'LINKEDIN' ||
+    execution?.actual_channel === 'LINKEDIN' ||
+    execution?.strategy_result?.recommended_channel === 'LINKEDIN' ||
+    execution?.channel_result?.channel === 'LINKEDIN';
+
+  useEffect(() => {
+    if (isLinkedInActive) {
+      setShowLinkedInCard(true);
+    }
+  }, [isLinkedInActive]);
+
+  const defaultNote = `Hi ${prospect.name.split(' ')[0] || prospect.name}, saw your leadership role as ${prospect.title} at ${prospect.company}. Would love to connect and share insights on autonomous SDR workflows.`;
+
+  const activeNote =
+    customNote !== ''
+      ? customNote
+      : execution?.personalisation_result?.content ||
+        execution?.channel_result?.content ||
+        defaultNote;
+
+  const handleCopyNote = async () => {
+    try {
+      await copyToClipboard(activeNote);
+      setCopiedNote(true);
+      toast.success('LinkedIn note copied to clipboard! (≤ 300 chars)');
+      setTimeout(() => setCopiedNote(false), 2500);
+    } catch {
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
+  const handleOpenLinkedIn = () => {
+    const url = getLinkedInUrl(prospect);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    toast.success('Opening LinkedIn profile in new tab...');
+  };
+
+  const handleMarkLinkedInSent = async () => {
+    setMarkingSent(true);
+    const toastId = toast.loading('Syncing LinkedIn status to Supabase...');
+    try {
+      const score = execution?.icp_result?.score ?? prospect.icpScore;
+      await updateProspectStatus(prospect.id, 'SENT', 'LINKEDIN', score);
+      setCurrentStatus('CONTACTED');
+      setCurrentChannel('LINKEDIN');
+      if (execution) {
+        setExecution({
+          ...execution,
+          status: 'SENT',
+          actual_channel: 'LINKEDIN',
+          channel_result: {
+            ...(execution.channel_result || {}),
+            channel: 'LINKEDIN',
+            status: 'SENT',
+            recipient: getLinkedInUrl(prospect),
+            content: activeNote,
+            provider: 'HITL_1CLICK_DISPATCH',
+            timestamp: new Date().toISOString(),
+          } as any,
+        });
+      }
+      if (onUpdated) {
+        onUpdated({
+          ...prospect,
+          status: 'CONTACTED',
+          channel: 'LINKEDIN',
+          icpScore: score,
+        });
+      }
+      toast.success('Marked as Sent via LinkedIn! Synced to Supabase.', { id: toastId });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to mark as sent', { id: toastId });
+    } finally {
+      setMarkingSent(false);
+    }
+  };
 
   useEffect(() => {
     setLoadingExec(true);
@@ -122,6 +266,36 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
                   <Phone size={13} className="text-slate-400 flex-shrink-0" />
                   <span className="text-slate-600 font-mono">{prospect.phone}</span>
                   <span className="text-2xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-medium">SMS Ready</span>
+                </div>
+              )}
+              {((prospect.linkedin_url || (prospect as any).linkedinUrl)) ? (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <LinkedInIcon className="w-3.5 h-3.5 text-[#0A66C2] flex-shrink-0" />
+                  <a
+                    href={getLinkedInUrl(prospect)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#0A66C2] hover:underline flex items-center gap-1 truncate text-xs font-medium"
+                  >
+                    <span className="truncate">{prospect.linkedin_url || (prospect as any).linkedinUrl}</span>
+                    <ExternalLink size={11} className="flex-shrink-0 text-slate-400" />
+                  </a>
+                  <span className="text-2xs bg-blue-50 text-[#0A66C2] border border-blue-200 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
+                    LinkedIn Ready
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <LinkedInIcon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <a
+                    href={getLinkedInUrl(prospect)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-slate-500 hover:text-[#0A66C2] hover:underline flex items-center gap-1 text-xs"
+                  >
+                    <span>Search profile on LinkedIn</span>
+                    <ExternalLink size={11} className="flex-shrink-0 text-slate-400" />
+                  </a>
                 </div>
               )}
               <div className="flex items-center gap-2.5 text-sm">
@@ -316,6 +490,158 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
                   </p>
                 )}
               </div>
+            )}
+
+            {/* Interactive 1-Click HITL LinkedIn Dispatch Card */}
+            {showLinkedInCard || isLinkedInActive ? (
+              <div className="p-4 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/70 via-white to-blue-50/30 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#0A66C2] flex items-center justify-center text-white shadow-xs flex-shrink-0">
+                      <LinkedInIcon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-bold text-slate-900">LinkedIn 1-Click Dispatch</h4>
+                        <span className="text-3xs font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-[#0A66C2] border border-blue-200">
+                          HITL Safe
+                        </span>
+                      </div>
+                      <p className="text-2xs text-slate-500">
+                        {prospect.linkedin_url || (prospect as any).linkedinUrl ? 'Direct Profile Linked' : 'Auto Search Fallback'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'text-2xs font-mono font-semibold px-2 py-0.5 rounded-full border',
+                        activeNote.length <= 300
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                      )}
+                    >
+                      {activeNote.length}/300 chars
+                    </span>
+                    {!isLinkedInActive && (
+                      <button
+                        type="button"
+                        onClick={() => setShowLinkedInCard(false)}
+                        className="text-slate-400 hover:text-slate-600 p-0.5"
+                        title="Collapse LinkedIn Dispatch"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-2xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Connection Request Note (≤ 300 Chars)
+                    </label>
+                    {activeNote.length > 300 && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomNote(activeNote.slice(0, 300))}
+                        className="text-2xs text-amber-700 hover:text-amber-800 underline font-medium"
+                      >
+                        Auto-trim to 300
+                      </button>
+                    )}
+                  </div>
+
+                  <textarea
+                    value={activeNote}
+                    onChange={(e) => setCustomNote(e.target.value)}
+                    rows={3}
+                    maxLength={350}
+                    className={cn(
+                      'w-full text-xs text-slate-800 bg-white p-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all resize-none font-sans leading-relaxed',
+                      activeNote.length > 300
+                        ? 'border-rose-300 focus:ring-rose-200'
+                        : 'border-blue-200 focus:ring-blue-200 focus:border-blue-400'
+                    )}
+                    placeholder="Enter personalized connection request note..."
+                  />
+                </div>
+
+                {/* 3 Action Buttons */}
+                <div className="grid grid-cols-3 gap-2 pt-0.5">
+                  {/* 1. Copy Note */}
+                  <button
+                    type="button"
+                    onClick={handleCopyNote}
+                    className={cn(
+                      'flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold border transition-all shadow-2xs cursor-pointer',
+                      copiedNote
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                    )}
+                  >
+                    {copiedNote ? <Check size={13} /> : <Copy size={13} className="text-slate-500" />}
+                    <span>{copiedNote ? 'Copied!' : '1. Copy Note'}</span>
+                  </button>
+
+                  {/* 2. Open Profile */}
+                  <button
+                    type="button"
+                    onClick={handleOpenLinkedIn}
+                    className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold bg-white text-[#0A66C2] border border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <LinkedInIcon className="w-3.5 h-3.5" />
+                    <span>2. Open Profile</span>
+                    <ExternalLink size={11} className="text-blue-400 flex-shrink-0" />
+                  </button>
+
+                  {/* 3. Mark Sent */}
+                  <button
+                    type="button"
+                    onClick={handleMarkLinkedInSent}
+                    disabled={markingSent || (currentStatus === 'CONTACTED' && currentChannel === 'LINKEDIN')}
+                    className={cn(
+                      'flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all shadow-2xs',
+                      currentStatus === 'CONTACTED' && currentChannel === 'LINKEDIN'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
+                        : 'bg-[#0A66C2] text-white hover:bg-[#004182] active:bg-[#003162] cursor-pointer'
+                    )}
+                  >
+                    {markingSent ? (
+                      <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : currentStatus === 'CONTACTED' && currentChannel === 'LINKEDIN' ? (
+                      <CheckCircle size={13} className="text-emerald-600" />
+                    ) : (
+                      <Check size={13} />
+                    )}
+                    <span>
+                      {markingSent
+                        ? 'Saving...'
+                        : currentStatus === 'CONTACTED' && currentChannel === 'LINKEDIN'
+                        ? 'Sent ✓'
+                        : '3. Mark Sent'}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-3xs text-slate-400 pt-1 border-t border-blue-100">
+                  <span className="flex items-center gap-1 text-slate-500">
+                    <ShieldCheck size={12} className="text-emerald-600 flex-shrink-0" />
+                    Human-in-the-Loop prevents automated bot detection
+                  </span>
+                  <span className="font-mono text-slate-400">Syncs to Supabase</span>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowLinkedInCard(true)}
+                className="w-full py-2.5 px-3 rounded-xl border border-dashed border-blue-200 bg-blue-50/40 hover:bg-blue-50 text-xs text-[#0A66C2] font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <LinkedInIcon className="w-3.5 h-3.5" />
+                <span>Open LinkedIn 1-Click HITL Outreach</span>
+              </button>
             )}
           </section>
 

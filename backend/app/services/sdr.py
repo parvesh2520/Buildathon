@@ -80,6 +80,22 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
         _log_structured(execution_id, campaign_id, prospect_id, "ORCHESTRATOR", None, "FAILED", "Campaign not found")
         return rec
 
+    from app.routes.operational_controls import _controls_state
+    if _controls_state.get("global_kill_switch"):
+        rec = ExecutionRecord(
+            execution_id=execution_id,
+            campaign_id=campaign_id,
+            prospect_id=prospect_id,
+            status="BLOCKED",
+            current_agent="ORCHESTRATOR",
+            error=f"Emergency Global Kill Switch is ENGAGED ({_controls_state.get('kill_switch_reason', 'Operator Stop')}). Autonomous activity halted.",
+            started_at=started_at,
+            completed_at=datetime.now(timezone.utc).isoformat(),
+        )
+        create_execution(rec)
+        _log_structured(execution_id, campaign_id, prospect_id, "ORCHESTRATOR", None, "BLOCKED", "Global Kill Switch active")
+        return rec
+
     if campaign.status != "LIVE":
         rec = ExecutionRecord(
             execution_id=execution_id,
@@ -110,7 +126,29 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
         _log_structured(execution_id, campaign_id, prospect_id, "ORCHESTRATOR", None, "FAILED", "Prospect not found")
         return rec
 
-    # 2. Initialise RUNNING execution record
+    # 2. Idempotency Check: Prevent duplicate sends if already successfully dispatched
+    for past_exec in get_all_executions():
+        if (
+            past_exec.campaign_id == campaign_id
+            and past_exec.prospect_id == prospect_id
+            and past_exec.status in ["SENT", "COMPLETED"]
+        ):
+            logger.info(
+                f"[IDEMPOTENCY] Outreach already sent for prospect '{prospect_id}' in campaign '{campaign_id}' "
+                f"(execution_id: {past_exec.execution_id}, status: {past_exec.status}). Skipping duplicate send."
+            )
+            _log_structured(
+                past_exec.execution_id,
+                campaign_id,
+                prospect_id,
+                "ORCHESTRATOR",
+                past_exec.actual_channel or past_exec.recommended_channel,
+                "SKIPPED_DUPLICATE",
+                "Idempotency guard: outreach already sent",
+            )
+            return past_exec
+
+    # 3. Initialise RUNNING execution record
     rec = ExecutionRecord(
         execution_id=execution_id,
         campaign_id=campaign_id,
@@ -240,7 +278,8 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
         elif not pers_res.get("content"):
             validation_error = "SMS content is missing"
         elif len(pers_res.get("content", "")) > 160:
-            validation_error = f"SMS exceeds 160-character limit ({len(pers_res['content'])} characters)"
+            pers_res["content"] = pers_res["content"][:157].rstrip() + "..."
+            logger.info(f"[SMS TRUNCATE] Truncated SMS content to 160 chars for prospect {prospect_id}")
 
     elif recommended_channel == "LINKEDIN":
         if not p_linkedin:
@@ -251,6 +290,9 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
     elif recommended_channel in ["PHONE", "VOICE"]:
         if not p_phone:
             validation_error = "Prospect phone number is missing for Voice SDR call"
+
+    if not validation_error and recommended_channel in _controls_state.get("paused_channels", []):
+        validation_error = f"Outreach via '{recommended_channel}' is temporarily PAUSED by operator channel policy"
 
     if validation_error:
         rec.status = "FAILED"

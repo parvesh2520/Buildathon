@@ -7,6 +7,10 @@ from typing import Any, Dict, Tuple, Optional
 from app.config import (
     DRONAHQ_WEBHOOK_URL,
     DRONAHQ_API_KEY,
+    DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL,
+    DRONAHQ_EMAIL_EXECUTOR_API_KEY,
+    DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL,
+    DRONAHQ_SMS_EXECUTOR_API_KEY,
     DRONAHQ_LEAD_RESEARCH_URL,
     DRONAHQ_LEAD_RESEARCH_KEY,
     DRONAHQ_ICP_FITMENT_URL,
@@ -99,6 +103,399 @@ def unwrap_dronahq_response(raw_data: Any) -> Dict[str, Any]:
         return unwrap_dronahq_response(msg_val)
 
     return raw_data
+
+
+def call_email_executor(
+    execution_id: str,
+    campaign_id: str,
+    prospect_id: str,
+    to_email: str,
+    subject: str,
+    message: str,
+    timeout: int = 30,
+) -> Dict[str, Any]:
+    """
+    Invokes the dedicated DronaHQ Email Outreach Executor webhook.
+    
+    FastAPI acts strictly as a dispatcher executing the AI recommendation.
+    Payload is sent as a flat JSON object:
+    {
+      "execution_id": "...",
+      "campaign_id": "...",
+      "prospect_id": "...",
+      "to_email": "...",
+      "subject": "...",
+      "message": "..."
+    }
+    """
+    clean_url = (DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL or "").strip()
+    if not clean_url:
+        logger.warning("[EMAIL EXECUTOR] DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL is not configured.")
+        return {
+            "success": False,
+            "channel": "EMAIL",
+            "status": "FAILED",
+            "provider": "DRONAHQ_EMAIL_EXECUTOR",
+            "provider_message_id": None,
+            "recipient": to_email,
+            "subject": subject,
+            "error": "DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL not configured",
+        }
+
+    payload = {
+        "execution_id": str(execution_id or ""),
+        "campaign_id": str(campaign_id or ""),
+        "prospect_id": str(prospect_id or ""),
+        "to_email": str(to_email or "").strip(),
+        "subject": str(subject or "").strip(),
+        "message": str(message or "").strip(),
+    }
+
+    logger.info(
+        f"[EMAIL EXECUTOR TRIGGER] Calling DronaHQ Email Outreach Executor at {clean_url[:40]}... "
+        f"for prospect {payload['prospect_id']} ({payload['to_email']}) [execution: {payload['execution_id']}]"
+    )
+
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "AutonomousSDR-FastAPI/1.0",
+    }
+    if DRONAHQ_EMAIL_EXECUTOR_API_KEY:
+        headers["api-key"] = DRONAHQ_EMAIL_EXECUTOR_API_KEY.strip()
+        headers["x-api-key"] = DRONAHQ_EMAIL_EXECUTOR_API_KEY.strip()
+
+    try:
+        req = urllib.request.Request(
+            url=clean_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as res:
+            status_code = res.getcode()
+            raw_text = res.read().decode("utf-8")
+            unwrapped = unwrap_dronahq_response(raw_text)
+            logger.info(f"[EMAIL EXECUTOR RESPONDED] HTTP {status_code}")
+
+            raw_status = str(unwrapped.get("status", "")).upper()
+            is_explicit_false = unwrapped.get("success") is False
+            is_success = (
+                not is_explicit_false
+                and (
+                    unwrapped.get("success") is True
+                    or raw_status in ["SENT", "SUCCESS", "DELIVERED", "COMPLETED"]
+                    or status_code in [200, 201, 202]
+                )
+            )
+
+            provider_msg_id = (
+                unwrapped.get("provider_message_id")
+                or unwrapped.get("id")
+                or unwrapped.get("execution_id")
+                or f"dhq_email_{payload['execution_id']}"
+            )
+
+            if is_success:
+                return {
+                    "success": True,
+                    "channel": "EMAIL",
+                    "status": "SENT",
+                    "provider": "DRONAHQ_EMAIL_EXECUTOR",
+                    "provider_message_id": provider_msg_id,
+                    "recipient": payload["to_email"],
+                    "subject": payload["subject"],
+                    "content": payload["message"],
+                    "error": None,
+                    "raw_response": unwrapped,
+                }
+            else:
+                err_detail = (
+                    unwrapped.get("error")
+                    or unwrapped.get("message")
+                    or f"Executor returned status: {raw_status or 'FAILED'}"
+                )
+                return {
+                    "success": False,
+                    "channel": "EMAIL",
+                    "status": "FAILED",
+                    "provider": "DRONAHQ_EMAIL_EXECUTOR",
+                    "provider_message_id": None,
+                    "recipient": payload["to_email"],
+                    "subject": payload["subject"],
+                    "content": payload["message"],
+                    "error": str(err_detail),
+                    "raw_response": unwrapped,
+                }
+
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8") if e.fp else str(e)
+        unwrapped_err = unwrap_dronahq_response(error_body)
+        err_msg = (
+            unwrapped_err.get("error")
+            or unwrapped_err.get("message")
+            or f"HTTP Error {e.code}"
+        )
+        logger.error(f"[EMAIL EXECUTOR HTTP ERROR {e.code}] {err_msg}")
+        return {
+            "success": False,
+            "channel": "EMAIL",
+            "status": "FAILED",
+            "provider": "DRONAHQ_EMAIL_EXECUTOR",
+            "provider_message_id": None,
+            "recipient": payload["to_email"],
+            "subject": payload["subject"],
+            "content": payload["message"],
+            "error": f"HTTP Error {e.code}: {err_msg}",
+            "raw_response": unwrapped_err,
+        }
+    except Exception as e:
+        err_msg = str(e)
+        logger.error(f"[EMAIL EXECUTOR ERROR] {err_msg}")
+        return {
+            "success": False,
+            "channel": "EMAIL",
+            "status": "FAILED",
+            "provider": "DRONAHQ_EMAIL_EXECUTOR",
+            "provider_message_id": None,
+            "recipient": payload["to_email"],
+            "subject": payload["subject"],
+            "content": payload["message"],
+            "error": f"Email executor dispatch failed: {err_msg}",
+        }
+
+
+def call_sms_executor(
+    execution_id: str,
+    campaign_id: str,
+    prospect_id: str,
+    to_phone: str,
+    message: str,
+    timeout: int = 30,
+    retry_trial_template: bool = True,
+) -> Dict[str, Any]:
+    """
+    Invokes the dedicated DronaHQ SMS Outreach Executor webhook.
+    
+    FastAPI acts strictly as a dispatcher executing the AI recommendation.
+    Payload is sent as the exact flat JSON object:
+    {
+      "execution_id": execution_id,
+      "campaign_id": campaign_id,
+      "prospect_id": prospect_id,
+      "to_phone": to_phone,
+      "message": message
+    }
+    Includes automatic self-healing for Twilio Trial Account Error 572006
+    (Twilio trial accounts require approved template 'sms_appointment_reminders' for Indian +91 numbers).
+    """
+    clean_url = (DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL or "").strip()
+    clean_phone = str(to_phone or "").strip()
+    clean_msg = str(message or "").strip()
+
+    if not clean_url:
+        logger.warning("[SMS EXECUTOR] DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL is not configured.")
+        return {
+            "success": False,
+            "channel": "SMS",
+            "status": "FAILED",
+            "provider": "DRONAHQ_SMS_EXECUTOR",
+            "provider_message_id": None,
+            "recipient": clean_phone,
+            "content": clean_msg,
+            "error": "DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL not configured",
+        }
+
+    if not clean_phone:
+        logger.error(f"[SMS EXECUTOR] Missing to_phone for prospect {prospect_id}")
+        return {
+            "success": False,
+            "channel": "SMS",
+            "status": "FAILED",
+            "provider": "DRONAHQ_SMS_EXECUTOR",
+            "provider_message_id": None,
+            "recipient": None,
+            "content": clean_msg,
+            "error": "Prospect phone number is missing for SMS outreach",
+        }
+
+    payload = {
+        "execution_id": str(execution_id or ""),
+        "campaign_id": str(campaign_id or ""),
+        "prospect_id": str(prospect_id or ""),
+        "to_phone": clean_phone,
+        "message": clean_msg,
+    }
+
+    logger.info(
+        f"[SMS EXECUTOR TRIGGER] Calling DronaHQ SMS Outreach Executor at {clean_url[:40]}... "
+        f"for prospect {payload['prospect_id']} ({payload['to_phone']}) [execution: {payload['execution_id']}]"
+    )
+
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "AutonomousSDR-FastAPI/1.0",
+    }
+    if DRONAHQ_SMS_EXECUTOR_API_KEY:
+        headers["api-key"] = DRONAHQ_SMS_EXECUTOR_API_KEY.strip()
+        headers["x-api-key"] = DRONAHQ_SMS_EXECUTOR_API_KEY.strip()
+
+    try:
+        req = urllib.request.Request(
+            url=clean_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as res:
+            status_code = res.getcode()
+            raw_text = res.read().decode("utf-8")
+            unwrapped = unwrap_dronahq_response(raw_text)
+            logger.info(f"[SMS EXECUTOR RESPONDED] HTTP {status_code}")
+
+            raw_status = str(unwrapped.get("status", "")).upper()
+            is_explicit_false = unwrapped.get("success") is False
+            is_success = (
+                not is_explicit_false
+                and (
+                    unwrapped.get("success") is True
+                    or raw_status in ["SENT", "SUCCESS", "DELIVERED", "COMPLETED"]
+                    or status_code in [200, 201, 202]
+                )
+            )
+
+            # Check if DronaHQ returned 200 but body contains Twilio trial template restriction 572006
+            is_trial_err = (
+                (isinstance(unwrapped, dict) and (unwrapped.get("code") == 572006 or str(unwrapped.get("code")) == "572006"))
+                or "572006" in str(unwrapped)
+                or "predefined sms templates" in str(unwrapped).lower()
+                or "invalid template name" in str(unwrapped).lower()
+            )
+            if is_trial_err:
+                is_success = False
+
+            provider_msg_id = (
+                unwrapped.get("provider_message_id")
+                or unwrapped.get("id")
+                or unwrapped.get("execution_id")
+                or f"dhq_sms_{payload['execution_id']}"
+            )
+
+            if is_success:
+                return {
+                    "success": True,
+                    "channel": "SMS",
+                    "status": "SENT",
+                    "provider": "DRONAHQ_SMS_EXECUTOR",
+                    "provider_message_id": provider_msg_id,
+                    "recipient": payload["to_phone"],
+                    "content": payload["message"],
+                    "error": None,
+                    "raw_response": unwrapped,
+                }
+            else:
+                # Check for Twilio Error 572006: trial account template restriction
+                if is_trial_err and retry_trial_template and clean_msg != "sms_appointment_reminders":
+                    logger.warning(
+                        f"[SMS TRIAL FALLBACK] Twilio Error 572006 detected from DronaHQ SMS Executor for {payload['to_phone']}. "
+                        f"Twilio trial accounts can only use predefined SMS templates when sending to Indian (+91) phone numbers. "
+                        f"Automatically retrying via DronaHQ SMS Executor with approved trial template 'sms_appointment_reminders'..."
+                    )
+                    retry_res = call_sms_executor(
+                        execution_id=execution_id,
+                        campaign_id=campaign_id,
+                        prospect_id=prospect_id,
+                        to_phone=to_phone,
+                        message="sms_appointment_reminders",
+                        timeout=timeout,
+                        retry_trial_template=False,
+                    )
+                    if retry_res.get("success"):
+                        retry_res["trial_template_used"] = "sms_appointment_reminders"
+                        retry_res["original_message"] = payload["message"]
+                        return retry_res
+
+                err_detail = (
+                    unwrapped.get("error")
+                    or unwrapped.get("message")
+                    or f"Executor returned status: {raw_status or 'FAILED'}"
+                )
+                return {
+                    "success": False,
+                    "channel": "SMS",
+                    "status": "FAILED",
+                    "provider": "DRONAHQ_SMS_EXECUTOR",
+                    "provider_message_id": None,
+                    "recipient": payload["to_phone"],
+                    "content": payload["message"],
+                    "error": str(err_detail),
+                    "raw_response": unwrapped,
+                }
+
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8") if e.fp else str(e)
+        unwrapped_err = unwrap_dronahq_response(error_body)
+
+        is_trial_err = (
+            (isinstance(unwrapped_err, dict) and (unwrapped_err.get("code") == 572006 or str(unwrapped_err.get("code")) == "572006"))
+            or "572006" in str(unwrapped_err)
+            or "572006" in error_body
+            or "predefined sms templates" in str(unwrapped_err).lower()
+            or "predefined sms templates" in error_body.lower()
+            or "invalid template name" in str(unwrapped_err).lower()
+            or "invalid template name" in error_body.lower()
+        )
+        if is_trial_err and retry_trial_template and clean_msg != "sms_appointment_reminders":
+            logger.warning(
+                f"[SMS TRIAL FALLBACK] Twilio Error 572006 detected from DronaHQ SMS Executor HTTP Error for {payload['to_phone']}. "
+                f"Twilio trial accounts can only use predefined SMS templates when sending to Indian (+91) phone numbers. "
+                f"Automatically retrying via DronaHQ SMS Executor with approved trial template 'sms_appointment_reminders'..."
+            )
+            retry_res = call_sms_executor(
+                execution_id=execution_id,
+                campaign_id=campaign_id,
+                prospect_id=prospect_id,
+                to_phone=to_phone,
+                message="sms_appointment_reminders",
+                timeout=timeout,
+                retry_trial_template=False,
+            )
+            if retry_res.get("success"):
+                retry_res["trial_template_used"] = "sms_appointment_reminders"
+                retry_res["original_message"] = payload["message"]
+                return retry_res
+
+        err_msg = (
+            unwrapped_err.get("error")
+            or unwrapped_err.get("message")
+            or f"HTTP Error {e.code}"
+        )
+        logger.error(f"[SMS EXECUTOR HTTP ERROR {e.code}] {err_msg}")
+        return {
+            "success": False,
+            "channel": "SMS",
+            "status": "FAILED",
+            "provider": "DRONAHQ_SMS_EXECUTOR",
+            "provider_message_id": None,
+            "recipient": payload["to_phone"],
+            "content": payload["message"],
+            "error": f"HTTP Error {e.code}: {err_msg}",
+            "raw_response": unwrapped_err,
+        }
+    except Exception as e:
+        err_msg = str(e)
+        logger.error(f"[SMS EXECUTOR ERROR] {err_msg}")
+        return {
+            "success": False,
+            "channel": "SMS",
+            "status": "FAILED",
+            "provider": "DRONAHQ_SMS_EXECUTOR",
+            "provider_message_id": None,
+            "recipient": payload["to_phone"],
+            "content": payload["message"],
+            "error": f"SMS executor dispatch failed: {err_msg}",
+        }
 
 
 def parse_agent_results(
@@ -242,11 +639,15 @@ def parse_agent_results(
                 f"Autonomous SDR Team"
             )
 
+    pers_msg = str(content).strip()
+    if channel == "SMS" and len(pers_msg) > 160:
+        pers_msg = pers_msg[:157].rstrip() + "..."
+
     personalisation_result = {
         "prospect_id": p_id,
         "channel": channel,
         "subject_line": subject_line,
-        "content": str(content).strip(),
+        "content": pers_msg,
         "rag_sources_cited": p_data.get("rag_sources_cited", []),
         "claims_made": p_data.get("claims_made", []),
         "mentions_pricing": p_data.get("mentions_pricing", False),
@@ -476,11 +877,15 @@ def run_dronahq_multi_agent_pipeline(
                     f"Autonomous SDR Team"
                 )
 
+        pers_msg = str(pers_content).strip()
+        if rec_channel == "SMS" and len(pers_msg) > 160:
+            pers_msg = pers_msg[:157].rstrip() + "..."
+
         pers_res = {
             "prospect_id": p_dict["id"],
             "channel": rec_channel,
             "subject_line": pers_subject,
-            "content": str(pers_content).strip(),
+            "content": pers_msg,
             "rag_sources_cited": pers_raw.get("rag_sources_cited", ["Product Architecture Guide", "Executive Benchmarks"]),
             "confidence_score": pers_raw.get("confidence_score", 0.96),
         }

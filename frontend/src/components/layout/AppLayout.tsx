@@ -1,13 +1,17 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Toaster } from 'react-hot-toast';
+import { GlobalKillSwitchBanner } from './GlobalKillSwitchBanner';
 
 export function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-surface-secondary">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        <GlobalKillSwitchBanner />
+        <div className="flex-1 overflow-y-auto">
+          <Outlet />
+        </div>
       </main>
       <Toaster
         position="top-right"

@@ -955,5 +955,372 @@
       "timestamp": "2026-09-19T18:51:31.071432+00:00"
     },
     "voice_agent_result": null
+  },
+  {
+    "execution_id": "b7025856-bccd-4c37-bfb2-a5b58d4ff3f2",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "b6104a4a-575c-42bd-98af-1746fe6bb32d",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": "EMAIL",
+    "recommended_channel": "EMAIL",
+    "actual_channel": "EMAIL",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-20T07:06:13.980667+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-20T07:06:41.435993+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "b6104a4a-575c-42bd-98af-1746fe6bb32d",
+      "prospect_summary": "Yadav is CTO at XYX.",
+      "verified_domain": "xyx.com",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as CTO",
+        "Engineering automation at XYX"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 85,
+      "reasoning": "Yadav qualifies as a CTO at a SaaS company with 67 employees in the US, fitting the campaign's ICP criteria. The detected tech stack aligns well with Turboscale AI's integration requirements.",
+      "matched_criteria": [
+        "Role Fit: CTO",
+        "Company Fit: 50-500 employees, US-based",
+        "Tech Stack Fit: Uses Cloud Infrastructure, CI/CD, DevOps"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "b6104a4a-575c-42bd-98af-1746fe6bb32d",
+      "recommended_channel": "EMAIL",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Discuss how Turboscale AI can optimize CI/CD and Kubernetes for better engineering automation, enhancing efficiency at XYX, where Yadav is already focused on cloud infrastructure and DevOps practices.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Highlight the benefits of CI/CD and Kubernetes optimization. Cite industry benchmarks and case studies that resonate with the challenges faced by CTOs in similar companies. Avoid overly technical jargon that may alienate the reader.",
+      "suggested_wait_days": 0,
+      "reasoning": "EMAIL is the primary channel for US Tech Leaders, and since Yadav is a CTO at a SaaS company, it's the most suitable option to discuss relevant pain points and solutions."
+    },
+    "personalisation_result": {
+      "prospect_id": "b6104a4a-575c-42bd-98af-1746fe6bb32d",
+      "channel": "EMAIL",
+      "subject_line": "Accelerating developer velocity at XYX",
+      "content": "Hi Yadav,\n\nI noticed your leadership as CTO at XYX. At high-growth tech companies, engineering bottlenecks and repetitive SDLC tasks often slow down release cadence.\n\nOur Autonomous SDR and developer automation platform helps teams ship 40% faster without adding headcount.\n\nDo you have 10 minutes next Tuesday or Thursday for a brief introductory conversation?\n\nBest regards,\nAutonomous SDR Team",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "EMAIL",
+      "status": "SENT",
+      "provider": "DRONAHQ_EMAIL_EXECUTOR",
+      "provider_message_id": "undefined",
+      "recipient": "parvesh2520@gmail.com",
+      "error": null,
+      "subject": "Accelerating developer velocity at XYX",
+      "content": "Hi Yadav,\n\nI noticed your leadership as CTO at XYX. At high-growth tech companies, engineering bottlenecks and repetitive SDLC tasks often slow down release cadence.\n\nOur Autonomous SDR and developer automation platform helps teams ship 40% faster without adding headcount.\n\nDo you have 10 minutes next Tuesday or Thursday for a brief introductory conversation?\n\nBest regards,\nAutonomous SDR Team",
+      "timestamp": "2026-09-20T07:06:39.332820+00:00"
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "21fd4fc8-4a59-4349-add3-5ace65330761",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "e2f91150-79e8-4a2d-bcd7-6dec97884320",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": "SMS",
+    "recommended_channel": "SMS",
+    "actual_channel": "SMS",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-20T07:07:47.941372+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-20T07:08:11.978567+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "e2f91150-79e8-4a2d-bcd7-6dec97884320",
+      "prospect_summary": "Parvesh is CTO at XXXXXX.",
+      "verified_domain": "xxxxxx.com",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as CTO",
+        "Engineering automation at XXXXXX"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 95,
+      "reasoning": "Parvesh is the CTO at a US-based company with 167 employees, fitting well within the campaign's criteria. Additionally, the tech stack includes relevant technologies, affirming an operational need that aligns with our offering.",
+      "matched_criteria": [
+        "Role Fit: CTO",
+        "Company Fit: 50-500 employees",
+        "Company Fit: US-based",
+        "Tech Stack Fit: Uses Cloud Infrastructure, CI/CD, and DevOps"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "e2f91150-79e8-4a2d-bcd7-6dec97884320",
+      "recommended_channel": "SMS",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Highlight how Turboscale AI can enhance engineering automation, helping to streamline CI/CD practices at XXXXXX.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Emphasize the importance of engineering automation in optimally utilizing their cloud infrastructure. Cite specific stats about CI/CD efficiencies related to Turboscale AI.",
+      "suggested_wait_days": 0,
+      "reasoning": "SMS is the only specified outreach method for this contact. The angle connects with Parvesh's role as CTO and his focus on engineering automation."
+    },
+    "personalisation_result": {
+      "prospect_id": "e2f91150-79e8-4a2d-bcd7-6dec97884320",
+      "channel": "SMS",
+      "subject_line": null,
+      "content": "Hi Parvesh, saw your work at XXXXXX. We help teams ship 40% faster with AI. Open to a 5-min chat next week? - SDR",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "SMS",
+      "status": "SENT",
+      "provider": "DRONAHQ_SMS_EXECUTOR",
+      "provider_message_id": "dhq_sms_21fd4fc8-4a59-4349-add3-5ace65330761",
+      "recipient": "+917419045750",
+      "content": "Hi Parvesh, saw your work at XXXXXX. We help teams ship 40% faster with AI. Open to a 5-min chat next week? - SDR",
+      "error": null
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "2a27a987-d736-424e-b0ba-e3104ce6731e",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "b540cb0c-2472-456c-9ff6-e132c3227b66",
+    "status": "FAILED",
+    "current_agent": "PERSONALISATION",
+    "channel": "SMS",
+    "recommended_channel": "SMS",
+    "actual_channel": "SMS",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-20T07:19:14.337858+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-20T07:19:44.533610+00:00",
+    "error": "SMS exceeds 160-character limit (212 characters)",
+    "research_result": {
+      "prospect_id": "b540cb0c-2472-456c-9ff6-e132c3227b66",
+      "prospect_summary": "Parvesh is CTO at XXXXXXXX.",
+      "verified_domain": "xxxxxxxx.com",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as CTO",
+        "Engineering automation at XXXXXXXX"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 90,
+      "reasoning": "Parvesh is a CTO at a company with 546 employees, perfectly fitting the target ICP. Additionally, their tech stack includes relevant technologies such as CI/CD, indicating a strong potential operational need for Turboscale AI's solutions.",
+      "matched_criteria": [
+        "Role fit: CTO",
+        "Company fit: 546 employees, within the target range 50-500, located in the US",
+        "Tech stack fit: Detected technologies align with primary stack requirements (AWS, CI/CD)",
+        "Pain point alignment: Experience shows a need for CI/CD acceleration and cloud cost optimization"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "b540cb0c-2472-456c-9ff6-e132c3227b66",
+      "recommended_channel": "SMS",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Enhancing CI/CD and DevOps practices at XXXXXXXX with Turboscale AI's optimized solutions.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Emphasize the benefits of engineering automation and CI/CD optimization. Avoid overly technical jargon and focus on executive-level insights.",
+      "suggested_wait_days": 0,
+      "reasoning": "The primary outreach channel for US Tech Leaders is email; however, the prospect's notes specify to send SMS only. With the prospect being a CTO, an executive tone will resonate well, and the angle connects their current tech stack to the solutions offered by Turboscale AI."
+    },
+    "personalisation_result": {
+      "prospect_id": "b540cb0c-2472-456c-9ff6-e132c3227b66",
+      "channel": "SMS",
+      "subject_line": null,
+      "content": "Hi Parvesh, enhancing CI/CD and DevOps at XXXXXXXX can lead to significant efficiency gains. Our Turboscale AI solutions can help you streamline processes and reduce operational costs. Interested in a brief chat?",
+      "rag_sources_cited": [],
+      "confidence_score": 0.95
+    },
+    "channel_result": null,
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "22492edd-26c6-4908-8b64-570dcae8912b",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "b540cb0c-2472-456c-9ff6-e132c3227b66",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": "SMS",
+    "recommended_channel": "SMS",
+    "actual_channel": "SMS",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-20T07:22:38.334103+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-20T07:23:04.442253+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "b540cb0c-2472-456c-9ff6-e132c3227b66",
+      "prospect_summary": "Parvesh is CTO at XXXXXXXX.",
+      "verified_domain": "xxxxxxxx.com",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as CTO",
+        "Engineering automation at XXXXXXXX"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 80,
+      "reasoning": "The prospect is a CTO at a company with 546 employees, which fits well within the target range for the US SaaS CTO campaign. Additionally, the detected tech stack aligns with our product's integration needs, confirming a strong fit.",
+      "matched_criteria": [
+        "Role Fit: CTO",
+        "Company Fit: 546 employees, US-based",
+        "Tech Stack Fit: Cloud Infrastructure, CI/CD, DevOps"
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "b540cb0c-2472-456c-9ff6-e132c3227b66",
+      "recommended_channel": "SMS",
+      "action_type": "NEW_OUTREACH",
+      "angle": "How Turboscale AI can automate engineering processes at XXXXXXXX for more efficient CI/CD and Kubernetes optimization.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Focus on the benefits of CI/CD automation and Kubernetes optimization. Connect it to his role as CTO and how it can impact engineering leadership at his company. Avoid jargon and keep it clear and professional.",
+      "suggested_wait_days": 0,
+      "reasoning": "The prospect is a CTO at a US-based SaaS company with a relevant tech stack, and SMS is the only preferred method available as per their notes. This outreach will highlight pain points related to their detected tech stack."
+    },
+    "personalisation_result": {
+      "prospect_id": "b540cb0c-2472-456c-9ff6-e132c3227b66",
+      "channel": "SMS",
+      "subject_line": null,
+      "content": "Hi Parvesh, as CTO, optimizing CI/CD and Kubernetes at XXXXXXXX can enhance your engineering processes. Turboscale AI streamlines your workflows, boosting ef...",
+      "rag_sources_cited": [],
+      "confidence_score": 0.95
+    },
+    "channel_result": {
+      "channel": "SMS",
+      "status": "SENT",
+      "provider": "DRONAHQ_SMS_EXECUTOR",
+      "provider_message_id": "22492edd-26c6-4908-8b64-570dcae8912b",
+      "recipient": "+917419045750",
+      "content": "Hi Parvesh, as CTO, optimizing CI/CD and Kubernetes at XXXXXXXX can enhance your engineering processes. Turboscale AI streamlines your workflows, boosting ef...",
+      "trial_template_used": "sms_appointment_reminders",
+      "error": null
+    },
+    "voice_agent_result": null
+  },
+  {
+    "execution_id": "5008c28d-97ea-44d9-9aba-8d6f0186feb5",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "0d603d83-dd58-4a83-869b-b93c38fbc3a8",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": "SMS",
+    "recommended_channel": "SMS",
+    "actual_channel": "SMS",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-20T07:28:34.225074+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-20T07:29:04.622842+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "0d603d83-dd58-4a83-869b-b93c38fbc3a8",
+      "prospect_summary": "ttt is CTO at xxxxxxxxx.",
+      "verified_domain": "xxxxxxxxx.com",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as CTO",
+        "Engineering automation at xxxxxxxxx"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 85,
+      "reasoning": "The prospect qualifies well as a CTO at a suitable company size with the relevant tech stack, meeting the campaign's criteria for a high fit score. There are no disqualifying factors identified.",
+      "matched_criteria": [
+        "Role Fit: Chief Technology Officer (CTO) aligns with the target title.",
+        "Company Fit: Company size of 57 employees matches the ICP requirement (50-500 employees) and is located in a target geography.",
+        "Tech Stack Fit: Detected tech stack includes Cloud Infrastructure, CI/CD, and DevOps, which are relevant technologies for the campaign.",
+        "Pain Point Alignment: As a CTO, likely has operational needs related to CI/CD and cloud optimization."
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "0d603d83-dd58-4a83-869b-b93c38fbc3a8",
+      "recommended_channel": "SMS",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Highlighting the benefits of CI/CD and DevOps automation to align with their cloud infrastructure needs.",
+      "tone": "CASUAL",
+      "instructions_for_copywriter": "Mention how our solutions optimize CI/CD processes, leading to more efficient engineering automation. Avoid jargon; keep it friendly.",
+      "suggested_wait_days": 0,
+      "reasoning": "The prospect is a CTO, and the only enabled channel appropriate for outreach is SMS, as specified. The angle focuses on their role and the detected tech stack."
+    },
+    "personalisation_result": {
+      "prospect_id": "0d603d83-dd58-4a83-869b-b93c38fbc3a8",
+      "channel": "SMS",
+      "subject_line": null,
+      "content": "Hi! At StackPulse, we optimize CI/CD processes, enhancing engineering automation to align perfectly with your cloud infrastructure needs. Let's chat!",
+      "rag_sources_cited": [
+        "StackPulse"
+      ],
+      "confidence_score": 0.95
+    },
+    "channel_result": {
+      "channel": "SMS",
+      "status": "SENT",
+      "provider": "DRONAHQ_SMS_EXECUTOR",
+      "provider_message_id": "5008c28d-97ea-44d9-9aba-8d6f0186feb5",
+      "recipient": "+917419045750",
+      "content": "Hi! At StackPulse, we optimize CI/CD processes, enhancing engineering automation to align perfectly with your cloud infrastructure needs. Let's chat!",
+      "trial_template_used": "sms_appointment_reminders",
+      "error": null
+    },
+    "voice_agent_result": null
   }
 ]

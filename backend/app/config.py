@@ -37,6 +37,24 @@ DRONAHQ_OUTREACH_STRATEGY_KEY: str = os.getenv("DRONAHQ_OUTREACH_STRATEGY_KEY", 
 DRONAHQ_PERSONALISATION_URL: str = os.getenv("DRONAHQ_PERSONALISATION_URL", "")
 DRONAHQ_PERSONALISATION_KEY: str = os.getenv("DRONAHQ_PERSONALISATION_KEY", "")
 
+# DronaHQ Email Outreach Executor Settings
+DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL: str = os.getenv(
+    "DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL",
+    "https://automations.dronahq.com/webhook/6aaf7e180d2831ebfde3ceeb"
+)
+DRONAHQ_EMAIL_EXECUTOR_API_KEY: str = os.getenv("DRONAHQ_EMAIL_EXECUTOR_API_KEY", "")
+
+# DronaHQ SMS Outreach Executor Settings
+DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL: str = os.getenv(
+    "DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL",
+    "https://automations.dronahq.com/webhook/6aaf81140d2831ebfde3cf57"
+)
+DRONAHQ_SMS_EXECUTOR_API_KEY: str = os.getenv("DRONAHQ_SMS_EXECUTOR_API_KEY", "")
+
+# DronaHQ LinkedIn Automation Webhook Settings
+DRONAHQ_LINKEDIN_WEBHOOK_URL: str = os.getenv("DRONAHQ_LINKEDIN_WEBHOOK_URL", "")
+DRONAHQ_LINKEDIN_API_KEY: str = os.getenv("DRONAHQ_LINKEDIN_API_KEY", "")
+
 # Twilio Telephony Settings (Voice & SMS)
 TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN: str = os.getenv("TWILIO_AUTH_TOKEN", "")

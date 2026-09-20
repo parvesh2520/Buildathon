@@ -47,3 +47,25 @@ export async function deleteProspect(id: string): Promise<void> {
   return apiClient.delete<void>(`/api/prospects/${id}`);
 }
 
+export async function updateProspectStatus(
+  id: string,
+  status: string,
+  channel?: string,
+  icp_score?: number
+): Promise<Prospect> {
+  if (IS_DEMO) {
+    await fakeDelay(300);
+    const p = _demoProspects.find((p) => p.id === id);
+    if (!p) throw new Error('Prospect not found');
+    p.status = status as any;
+    if (channel) p.channel = channel as any;
+    if (icp_score != null) p.icpScore = icp_score;
+    return { ...p };
+  }
+  return apiClient.patch<Prospect>(`/api/prospects/${id}/status`, {
+    status,
+    channel,
+    icp_score,
+  });
+}
+

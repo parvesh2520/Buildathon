@@ -14,7 +14,9 @@ from app.config import (
     SENDER_EMAIL,
     RESEND_API_KEY,
     RESEND_FROM_EMAIL,
+    DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL,
 )
+from app.services.dronahq import call_email_executor
 import urllib.request
 import urllib.error
 import json
@@ -131,11 +133,13 @@ async def send_email(
     content: str,
     prospect_id: Optional[str] = None,
     campaign_id: Optional[str] = None,
+    execution_id: Optional[str] = None,
     body_html: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Standard Email Provider Abstraction.
-    Supports Resend HTTP API (Port 443), Gmail SMTP, and smart cloud-firewall fallback.
+    Supports DronaHQ Email Outreach Executor webhook, Resend HTTP API (Port 443),
+    Gmail SMTP, and smart cloud-firewall fallback.
     """
     clean_recipient = (to_email or "").strip()
     clean_subject = (subject or "Message from SDR").strip()
@@ -156,11 +160,57 @@ async def send_email(
             "timestamp": timestamp,
         }
 
-    # 2. Build HTML body if omitted
+    # 2. Try DronaHQ Email Outreach Executor if configured
+    # FastAPI acts strictly as a dispatcher executing the AI recommendation via dedicated executor webhook
+    if DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL and len(DRONAHQ_EMAIL_EXECUTOR_WEBHOOK_URL.strip()) > 5:
+        logger.info(
+            f"[EMAIL DISPATCH] Dispatching via DronaHQ Email Outreach Executor to {clean_recipient} "
+            f"(execution: {execution_id}, prospect: {prospect_id})..."
+        )
+        executor_res = call_email_executor(
+            execution_id=execution_id or f"exec_{uuid.uuid4().hex[:10]}",
+            campaign_id=campaign_id or "",
+            prospect_id=prospect_id or "",
+            to_email=clean_recipient,
+            subject=clean_subject,
+            message=clean_body,
+        )
+        if executor_res.get("success"):
+            logger.info(
+                f"[EMAIL EXECUTOR CONFIRMED] Delivered to {clean_recipient} (id: {executor_res.get('provider_message_id')})"
+            )
+            return {
+                "channel": "EMAIL",
+                "status": "SENT",
+                "provider": "DRONAHQ_EMAIL_EXECUTOR",
+                "provider_message_id": executor_res.get("provider_message_id"),
+                "recipient": clean_recipient,
+                "error": None,
+                "subject": clean_subject,
+                "content": clean_body,
+                "timestamp": timestamp,
+            }
+        else:
+            # When the new executor is configured, failures must be recorded without falling back to SMTP
+            err = executor_res.get("error") or "DronaHQ Email Executor failed to send message"
+            logger.error(f"[EMAIL EXECUTOR FAILED] Dispatch failed for {clean_recipient}: {err}")
+            return {
+                "channel": "EMAIL",
+                "status": "FAILED",
+                "provider": "DRONAHQ_EMAIL_EXECUTOR",
+                "provider_message_id": None,
+                "recipient": clean_recipient,
+                "error": str(err),
+                "subject": clean_subject,
+                "content": clean_body,
+                "timestamp": timestamp,
+            }
+
+    # 3. Build HTML body if omitted (for SMTP/Resend fallback)
     html_content = body_html or build_responsive_html(clean_subject, clean_body)
     sender = SENDER_EMAIL or SMTP_USERNAME or "sdr@example.com"
 
-    # 3. Try HTTP-based Email API first (Resend) - Port 443 is never blocked by cloud firewalls
+    # 4. Try HTTP-based Email API (Resend) - Port 443 is never blocked by cloud firewalls
     if RESEND_API_KEY and len(RESEND_API_KEY.strip()) > 5:
         try:
             logger.info(f"[EMAIL RESEND] Sending email via Resend API to {clean_recipient}...")
@@ -294,7 +344,18 @@ def send_email_sync(
     to_email: str,
     subject: str,
     body_text: str,
+    prospect_id: Optional[str] = None,
+    campaign_id: Optional[str] = None,
+    execution_id: Optional[str] = None,
     body_html: Optional[str] = None,
 ) -> Dict[str, Any]:
     import asyncio
-    return asyncio.run(send_email(to_email, subject, body_text, body_html=body_html))
+    return asyncio.run(send_email(
+        to_email=to_email,
+        subject=subject,
+        content=body_text,
+        prospect_id=prospect_id,
+        campaign_id=campaign_id,
+        execution_id=execution_id,
+        body_html=body_html,
+    ))

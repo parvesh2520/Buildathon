@@ -1,20 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, Pause, ChevronRight, CheckCircle2, Clock } from 'lucide-react';
+import { ArrowLeft, Play, Pause, ChevronRight, CheckCircle2, Clock, Copy, ShieldAlert, Radio } from 'lucide-react';
 import { Campaign, Prospect } from '@/types';
-import { getCampaign, updateCampaignStatus } from '@/api/campaigns';
+import { getCampaign, updateCampaignStatus, duplicateCampaign } from '@/api/campaigns';
 import { getProspects } from '@/api/prospects';
 import { runSDR } from '@/api/sdr';
+import { getOperationalControls, toggleChannelPause } from '@/api/system';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { StatCard } from '@/components/shared/StatCard';
 import { ProspectTable } from '@/components/prospect/ProspectTable';
 import { ProspectDrawer } from '@/components/prospect/ProspectDrawer';
 import { AgentPipeline } from '@/components/agent/AgentPipeline';
+import { PromptHarnessTab } from '@/components/campaign/PromptHarnessTab';
+import { RepAssignmentTab } from '@/components/campaign/RepAssignmentTab';
+import { ConflictScannerModal } from '@/components/campaign/ConflictScannerModal';
 import { demoActivity } from '@/data/demo/activity';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
-type Tab = 'overview' | 'prospects' | 'activity' | 'outreach' | 'analytics';
+type Tab = 'overview' | 'prospects' | 'prompts' | 'reps' | 'activity' | 'outreach' | 'analytics';
 
 const funnelStages = [
   { label: 'Prospects', value: 842, pct: 100 },
@@ -65,13 +69,44 @@ export function CampaignDetail() {
   const [sdrState, setSdrState] = useState<'idle' | 'queued' | 'done'>('idle');
   const [loading, setLoading] = useState(true);
 
+  // Operational Controls & Problem Statement additions
+  const [duplicating, setDuplicating] = useState(false);
+  const [showConflictRadar, setShowConflictRadar] = useState(false);
+  const [pausedChannels, setPausedChannels] = useState<string[]>([]);
+
   useEffect(() => {
     if (!id) return;
-    Promise.all([getCampaign(id), getProspects()]).then(([c, all]) => {
+    Promise.all([getCampaign(id), getProspects(), getOperationalControls()]).then(([c, all, ctrl]) => {
       setCampaign(c);
       setProspects(all.filter((p) => p.campaignId === id));
+      if (ctrl?.paused_channels) setPausedChannels(ctrl.paused_channels);
     }).catch(() => toast.error('Campaign not found')).finally(() => setLoading(false));
   }, [id]);
+
+  const handleDuplicate = async () => {
+    if (!campaign) return;
+    setDuplicating(true);
+    try {
+      const cloned = await duplicateCampaign(campaign.id);
+      toast.success(`Duplicated variant created: ${cloned.name}`);
+      navigate(`/campaigns/${cloned.id}`);
+    } catch {
+      toast.error('Failed to duplicate campaign');
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
+  const handleToggleChannel = async (channel: string) => {
+    const isPaused = pausedChannels.includes(channel);
+    try {
+      const updated = await toggleChannelPause(channel, !isPaused);
+      setPausedChannels(updated.paused_channels);
+      toast.success(`${channel} ${isPaused ? 'resumed' : 'paused'} platform-wide`);
+    } catch {
+      toast.error(`Failed to update ${channel} status`);
+    }
+  };
 
   const toggleStatus = async () => {
     if (!campaign) return;
@@ -122,6 +157,8 @@ export function CampaignDetail() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'prospects', label: `Prospects (${prospects.length})` },
+    { id: 'prompts', label: 'Prompts & AI Harness' },
+    { id: 'reps', label: 'Reps & Quotas' },
     { id: 'activity', label: 'Agent Activity' },
     { id: 'outreach', label: 'Outreach' },
     { id: 'analytics', label: 'Analytics' },
@@ -154,6 +191,23 @@ export function CampaignDetail() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowConflictRadar(true)}
+            className="btn-secondary text-xs flex items-center gap-1.5"
+            title="Scan for cross-campaign prospect collisions"
+          >
+            <ShieldAlert size={13} className="text-amber-600" />
+            Conflict Radar
+          </button>
+          <button
+            onClick={handleDuplicate}
+            disabled={duplicating}
+            className="btn-secondary text-xs flex items-center gap-1.5"
+            title="Duplicate as Variant B for A/B Testing"
+          >
+            <Copy size={13} />
+            {duplicating ? 'Duplicating...' : 'Duplicate as Variant'}
+          </button>
+          <button
             onClick={handleRunSDR}
             disabled={sdrState !== 'idle'}
             className="btn-secondary text-xs"
@@ -167,6 +221,36 @@ export function CampaignDetail() {
           >
             {campaign.status === 'LIVE' ? <><Pause size={13} /> Pause</> : <><Play size={13} /> Activate</>}
           </button>
+        </div>
+      </div>
+
+      {/* Channel Operational Controls (Section 3 - Channel Pause) */}
+      <div className="card p-3.5 mb-6 bg-slate-50/70 border border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Radio size={14} className="text-brand" />
+          <span className="text-xs font-bold text-slate-700">Channel Operational Controls:</span>
+          <span className="text-2xs text-slate-400">Pause/Resume individual outreach channels</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {['EMAIL', 'LINKEDIN', 'SMS', 'PHONE'].map((ch) => {
+            const isPaused = pausedChannels.includes(ch);
+            return (
+              <button
+                key={ch}
+                onClick={() => handleToggleChannel(ch)}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-2xs font-semibold border transition-all cursor-pointer flex items-center gap-1',
+                  isPaused
+                    ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                )}
+              >
+                <span className={cn('w-1.5 h-1.5 rounded-full', isPaused ? 'bg-rose-500' : 'bg-emerald-500')} />
+                <span>{ch}</span>
+                <span className="text-3xs text-slate-400 font-normal">({isPaused ? 'Paused' : 'Active'})</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -266,6 +350,14 @@ export function CampaignDetail() {
         <ProspectTable prospects={prospects} onSelectProspect={setSelectedProspect} />
       )}
 
+      {tab === 'prompts' && (
+        <PromptHarnessTab campaignId={campaign.id} />
+      )}
+
+      {tab === 'reps' && (
+        <RepAssignmentTab campaignId={campaign.id} />
+      )}
+
       {tab === 'activity' && (
         <div className="card divide-y divide-border-light">
           {demoActivity.filter((a) => a.campaign === campaign.name || !a.campaign).slice(0, 10).map((event) => (
@@ -333,6 +425,10 @@ export function CampaignDetail() {
             setProspects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
           }}
         />
+      )}
+
+      {showConflictRadar && (
+        <ConflictScannerModal onClose={() => setShowConflictRadar(false)} />
       )}
     </div>
   );

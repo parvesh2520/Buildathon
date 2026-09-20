@@ -280,3 +280,88 @@ export interface ChartDataPoint {
   value: number;
   [key: string]: string | number;
 }
+
+// ─── Operational Controls & Problem Statement Additions ─────────────────────
+
+export interface OperationalControls {
+  global_kill_switch: boolean;
+  kill_switch_triggered_at?: string | null;
+  kill_switch_reason?: string | null;
+  paused_channels: string[];
+  paused_agents: string[];
+  campaign_summary?: {
+    total: number;
+    live: number;
+    paused: number;
+  };
+  system_status: 'HEALTHY' | 'EMERGENCY_STOPPED';
+}
+
+export interface PromptHarness {
+  system_prompt: string;
+  agent_prompts: {
+    icp_fitment?: string;
+    lead_research?: string;
+    outreach_strategy?: string;
+    personalisation?: string;
+    conversation?: string;
+    follow_up?: string;
+    voice_sdr?: string;
+    [key: string]: string | undefined;
+  };
+  version: string;
+  author: string;
+  updated_at: string;
+}
+
+export interface PromptHistoryResponse {
+  campaign_id: string;
+  current: PromptHarness;
+  history: PromptHarness[];
+  version_count: number;
+}
+
+export interface SalesRep {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  channels: string[];
+  daily_quota: number;
+  working_hours: string;
+  status: 'ACTIVE' | 'OFFBOARDED';
+}
+
+export interface CampaignConflict {
+  id: string;
+  type: string;
+  severity: 'HIGH' | 'MEDIUM' | 'LOW';
+  title: string;
+  email?: string;
+  company?: string;
+  prospect_id?: string;
+  involved_campaigns: string[];
+  description: string;
+  suggested_action: string;
+}
+
+export interface TokenEconomics {
+  summary: {
+    total_tokens_consumed: number;
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_cost_usd: number;
+    cost_per_prospect_usd: number;
+    cost_per_qualified_lead_usd: number;
+    average_latency_ms: number;
+  };
+  agent_breakdown: Array<{
+    agent: string;
+    model: string;
+    tokens: number;
+    cost: number;
+    avg_latency_ms: number;
+  }>;
+  optimization_notes: string[];
+}
+

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ChevronRight, MoreHorizontal, Copy } from 'lucide-react';
 import { Campaign } from '@/types';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { updateCampaignStatus } from '@/api/campaigns';
+import { updateCampaignStatus, duplicateCampaign } from '@/api/campaigns';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
@@ -108,8 +108,25 @@ export function CampaignTable({ campaigns, onStatusChange }: CampaignTableProps)
                 </div>
               </td>
               <td className="px-4 py-3 text-xs text-slate-400">{c.lastActivity ?? '—'}</td>
-              <td className="px-4 py-3">
-                <ChevronRight size={14} className="text-slate-300" />
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const cloned = await duplicateCampaign(c.id);
+                        toast.success(`Duplicated: ${cloned.name}`);
+                        navigate(`/campaigns/${cloned.id}`);
+                      } catch {
+                        toast.error('Failed to duplicate');
+                      }
+                    }}
+                    className="p-1 rounded text-slate-400 hover:text-brand hover:bg-slate-100 cursor-pointer"
+                    title="Duplicate as Variant"
+                  >
+                    <Copy size={13} />
+                  </button>
+                  <ChevronRight size={14} className="text-slate-300" />
+                </div>
               </td>
             </tr>
           ))}

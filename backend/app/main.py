@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import APP_NAME, APP_ENV
-from app.routes import campaigns, prospects, sdr, email, voice, database
+from app.routes import campaigns, prospects, sdr, email, voice, database, operational_controls
 from app.services.sdr import process_dronahq_webhook
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app.include_router(sdr.router)
 app.include_router(email.router)
 app.include_router(voice.router)
 app.include_router(database.router)
+app.include_router(operational_controls.router)
 
 
 @app.post("/api/dronahq/webhook", tags=["SDR"])

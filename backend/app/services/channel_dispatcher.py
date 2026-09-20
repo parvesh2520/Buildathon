@@ -54,6 +54,7 @@ async def dispatch_outreach(
             content=content,
             prospect_id=prospect_id,
             campaign_id=campaign_id,
+            execution_id=execution_id,
         )
 
     elif channel_norm == "SMS":
@@ -62,6 +63,7 @@ async def dispatch_outreach(
             content=content,
             prospect_id=prospect_id,
             campaign_id=campaign_id,
+            execution_id=execution_id,
         )
 
     elif channel_norm == "LINKEDIN":

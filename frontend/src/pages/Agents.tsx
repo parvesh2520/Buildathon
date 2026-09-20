@@ -6,14 +6,31 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { demoAgents } from '@/data/demo/agents';
 import { AgentPipeline } from '@/components/agent/AgentPipeline';
 import { getAgents } from '@/api/sdr';
+import { getOperationalControls, toggleAgentPause } from '@/api/system';
+import toast from 'react-hot-toast';
 
 export function Agents() {
   const [agents, setAgents] = useState<Agent[]>(demoAgents);
   const [selected, setSelected] = useState<Agent | null>(null);
+  const [pausedAgents, setPausedAgents] = useState<string[]>([]);
 
   useEffect(() => {
     getAgents().then(setAgents);
+    getOperationalControls().then((ctrl) => {
+      if (ctrl?.paused_agents) setPausedAgents(ctrl.paused_agents);
+    });
   }, []);
+
+  const handleToggleAgent = async (agentName: string) => {
+    const isPaused = pausedAgents.includes(agentName);
+    try {
+      const updated = await toggleAgentPause(agentName, !isPaused);
+      setPausedAgents(updated.paused_agents);
+      toast.success(`${agentName} ${isPaused ? 'resumed' : 'paused'}`);
+    } catch {
+      toast.error(`Failed to update ${agentName}`);
+    }
+  };
 
   return (
     <div className="p-6 max-w-[1200px] mx-auto">
@@ -46,7 +63,13 @@ export function Agents() {
       <h2 className="text-sm font-semibold text-slate-700 mb-4 uppercase tracking-wide">Agent Control Center</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {agents.map((agent) => (
-          <AgentCard key={agent.id} agent={agent} onClick={() => setSelected(agent)} />
+          <AgentCard
+            key={agent.id}
+            agent={agent}
+            paused={pausedAgents.includes(agent.name)}
+            onTogglePause={() => handleToggleAgent(agent.name)}
+            onClick={() => setSelected(agent)}
+          />
         ))}
       </div>
 

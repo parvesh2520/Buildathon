@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CheckCircle, AlertCircle, XCircle, Save, Mail, Send, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendTestEmail } from '@/api/email';
+import { KnowledgeBaseModal } from '@/components/knowledge/KnowledgeBaseModal';
 
 type SystemStatusKey = 'fastapi' | 'dronahq' | 'webhooks' | 'email';
 
@@ -31,6 +32,7 @@ export function Settings() {
   const [systemStatus] = useState(initialStatus);
   const [testEmailAddr, setTestEmailAddr] = useState('');
   const [sendingTest, setSendingTest] = useState(false);
+  const [showKbModal, setShowKbModal] = useState(false);
   const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 
   const save = (label: string) => {
@@ -160,17 +162,31 @@ export function Settings() {
           </div>
         </div>
 
-        {/* Knowledge Base */}
+        {/* Knowledge Base & Vector RAG */}
         <div className="card p-5">
-          <h2 className="text-sm font-semibold text-slate-800 mb-4">Knowledge Base</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-slate-800">Knowledge Base & Vector RAG Grounding</h2>
+            <button
+              onClick={() => setShowKbModal(true)}
+              className="text-xs text-brand hover:underline font-medium cursor-pointer"
+            >
+              Open Vector RAG Explorer →
+            </button>
+          </div>
           <div className="grid grid-cols-3 gap-2">
-            {['Product Information', 'Case Studies', 'Sales Playbook', 'ICP Definition', 'Objection Handling', 'Example Messages'].map((item) => (
-              <div key={item} className="flex items-center gap-2 p-3 rounded-lg border border-border text-xs text-slate-600 hover:border-brand hover:text-brand cursor-pointer transition-colors">
+            {['Product Information', 'Case Studies', 'Sales Playbook', 'ICP Definition', 'Objection Handling', 'Voice Scripts'].map((item) => (
+              <div
+                key={item}
+                onClick={() => setShowKbModal(true)}
+                className="flex items-center gap-2 p-3 rounded-lg border border-border text-xs text-slate-600 hover:border-brand hover:text-brand cursor-pointer transition-colors"
+              >
                 📄 {item}
               </div>
             ))}
           </div>
         </div>
+
+        {showKbModal && <KnowledgeBaseModal onClose={() => setShowKbModal(false)} />}
 
         {/* System Status */}
         <div className="card p-5">

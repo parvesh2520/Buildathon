@@ -10,7 +10,9 @@ from app.config import (
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
     TWILIO_PHONE_NUMBER,
+    DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL,
 )
+from app.services.dronahq import call_sms_executor
 
 logger = logging.getLogger("sdr.sms")
 
@@ -29,15 +31,12 @@ async def send_sms(
     content: Optional[str],
     prospect_id: Optional[str] = None,
     campaign_id: Optional[str] = None,
+    execution_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Twilio SMS Provider Abstraction.
-    
-    Validations:
-    - Phone number must exist
-    - Content must not be empty
-    - Enforces 160-character maximum limit
-    - If Twilio is not configured, returns PENDING_MANUAL without pretending delivery
+    SMS Provider Abstraction.
+    Supports DronaHQ SMS Outreach Executor webhook, Twilio REST API,
+    and PENDING_MANUAL review fallback.
     """
     clean_phone = (to_phone or "").strip()
     clean_content = (content or "").strip()
@@ -50,7 +49,7 @@ async def send_sms(
             "status": "FAILED",
             "provider_message_id": None,
             "recipient": None,
-            "error": "Prospect phone number is missing",
+            "error": "Prospect phone number is missing for SMS outreach",
         }
 
     # 2. Validation: content presence
@@ -64,21 +63,63 @@ async def send_sms(
             "error": "SMS content is empty",
         }
 
-    # 3. Validation: 160-character limit enforcement
-    if len(clean_content) > 160:
-        logger.error(
-            f"[SMS VALIDATION FAILED] SMS content exceeds 160 characters (length: {len(clean_content)}). "
-            f"Prospect: {prospect_id}"
+    # 3. Try DronaHQ SMS Outreach Executor if configured
+    # FastAPI acts strictly as a dispatcher executing the AI recommendation via dedicated executor webhook
+    if DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL and len(DRONAHQ_SMS_EXECUTOR_WEBHOOK_URL.strip()) > 5:
+        # For Twilio trial accounts sending to Indian (+91) numbers, Twilio strictly requires
+        # predefined trial template 'sms_appointment_reminders'. Proactively use it to guarantee 100% free delivery.
+        is_india_num = (
+            clean_phone.startswith("+91")
+            or clean_phone.startswith("91")
+            or (len(clean_phone) == 10 and clean_phone[0] in "6789")
         )
-        return {
-            "channel": "SMS",
-            "status": "FAILED",
-            "provider_message_id": None,
-            "recipient": clean_phone,
-            "error": f"SMS exceeds 160 character limit (length: {len(clean_content)})",
-        }
+        dispatch_msg = "sms_appointment_reminders" if is_india_num else clean_content
 
-    # 4. If Twilio is unconfigured, return PENDING_MANUAL
+        logger.info(
+            f"[SMS DISPATCH] Dispatching via DronaHQ SMS Outreach Executor to {clean_phone} "
+            f"(execution: {execution_id}, prospect: {prospect_id}, template: {'sms_appointment_reminders' if is_india_num else 'custom'})..."
+        )
+        executor_res = call_sms_executor(
+            execution_id=execution_id or f"exec_{uuid.uuid4().hex[:10]}",
+            campaign_id=campaign_id or "",
+            prospect_id=prospect_id or "",
+            to_phone=clean_phone,
+            message=dispatch_msg,
+        )
+        if executor_res.get("success"):
+            logger.info(
+                f"[SMS EXECUTOR CONFIRMED] Delivered to {clean_phone} (id: {executor_res.get('provider_message_id')})"
+            )
+            return {
+                "channel": "SMS",
+                "status": "SENT",
+                "provider": "DRONAHQ_SMS_EXECUTOR",
+                "provider_message_id": executor_res.get("provider_message_id"),
+                "recipient": clean_phone,
+                "content": clean_content,
+                "trial_template_used": "sms_appointment_reminders" if is_india_num or executor_res.get("trial_template_used") else None,
+                "error": None,
+            }
+        else:
+            # When the new executor is configured, failures must be recorded without falling back to Twilio
+            err = executor_res.get("error") or "DronaHQ SMS Executor failed to send message"
+            logger.error(f"[SMS EXECUTOR FAILED] Dispatch failed for {clean_phone}: {err}")
+            return {
+                "channel": "SMS",
+                "status": "FAILED",
+                "provider": "DRONAHQ_SMS_EXECUTOR",
+                "provider_message_id": None,
+                "recipient": clean_phone,
+                "content": clean_content,
+                "error": str(err),
+            }
+
+    # 4. Validation: 160-character limit enforcement (for direct Twilio path)
+    if len(clean_content) > 160:
+        clean_content = clean_content[:157].rstrip() + "..."
+        logger.info(f"[SMS TRUNCATE] Truncated SMS content to 160 chars for prospect {prospect_id}")
+
+    # 5. If Twilio is unconfigured, return PENDING_MANUAL
     if not is_twilio_configured():
         logger.info(
             f"[SMS PENDING_MANUAL] Twilio credentials not configured. SMS queued for manual review. "

@@ -878,5 +878,82 @@
       "error": null
     },
     "voice_agent_result": null
+  },
+  {
+    "execution_id": "873a8d83-9c0a-4829-b2a0-a6ba299e2561",
+    "campaign_id": "us_saas_cto",
+    "prospect_id": "62057bdb-3717-4716-853c-74522a99f121",
+    "status": "SENT",
+    "current_agent": "CHANNEL_EXECUTOR",
+    "channel": "EMAIL",
+    "recommended_channel": "EMAIL",
+    "actual_channel": "EMAIL",
+    "action_type": "NEW_OUTREACH",
+    "provider_call_id": null,
+    "started_at": "2026-09-19T18:51:07.549517+00:00",
+    "answered_at": null,
+    "ended_at": null,
+    "duration": null,
+    "call_outcome": null,
+    "completed_at": "2026-09-19T18:51:35.265544+00:00",
+    "error": null,
+    "research_result": {
+      "prospect_id": "62057bdb-3717-4716-853c-74522a99f121",
+      "prospect_summary": "Parvesh is CTO at XYZ.",
+      "verified_domain": "xyz.com",
+      "detected_tech_stack": [
+        "Cloud Infrastructure",
+        "CI/CD",
+        "DevOps"
+      ],
+      "personalisation_hooks": [
+        "Executive leadership as CTO",
+        "Engineering automation at XYZ"
+      ]
+    },
+    "icp_result": {
+      "status": "FIT",
+      "score": 80,
+      "reasoning": "Parvesh, as CTO at a mid-sized SaaS company, meets all the criteria for the campaign. The detected tech stack further confirms alignment with our product offering.",
+      "matched_criteria": [
+        "Role Fit: CTO aligns perfectly with decision maker.",
+        "Company Fit: Company has 120 employees, which is within the 50-500 range.",
+        "Tech Stack Fit: Detected tech stack includes Cloud Infrastructure, CI/CD, and DevOps, compatible with our product.",
+        "Pain Point Alignment: As a CTO, Parvesh likely faces challenges that our solution can address."
+      ],
+      "unmatched_criteria": []
+    },
+    "strategy_result": {
+      "prospect_id": "62057bdb-3717-4716-853c-74522a99f121",
+      "recommended_channel": "EMAIL",
+      "action_type": "NEW_OUTREACH",
+      "angle": "Leveraging CI/CD strategies to drive engineering automation and efficiency at XYZ.",
+      "tone": "EXECUTIVE",
+      "instructions_for_copywriter": "Highlight the benefits of Turboscale AI in enhancing CI/CD workflows. Avoid technical jargon and focus on business outcomes such as increased efficiency and reduced deployment times.",
+      "suggested_wait_days": 0,
+      "reasoning": "Email is the primary channel for communicating with US tech leaders. Given Parvesh's role as CTO and the potential impact of our solution on his engineering automation efforts, an executive tone with a focus on how CI/CD optimization can drive business success is appropriate."
+    },
+    "personalisation_result": {
+      "prospect_id": "62057bdb-3717-4716-853c-74522a99f121",
+      "channel": "EMAIL",
+      "subject_line": "Accelerating developer velocity at XYZ",
+      "content": "Hi Parvesh,\n\nI noticed your leadership as CTO at XYZ. At high-growth tech companies, engineering bottlenecks and repetitive SDLC tasks often slow down release cadence.\n\nOur Autonomous SDR and developer automation platform helps teams ship 40% faster without adding headcount.\n\nDo you have 10 minutes next Tuesday or Thursday for a brief introductory conversation?\n\nBest regards,\nAutonomous SDR Team",
+      "rag_sources_cited": [
+        "Product Architecture Guide",
+        "Executive Benchmarks"
+      ],
+      "confidence_score": 0.96
+    },
+    "channel_result": {
+      "channel": "EMAIL",
+      "status": "SENT",
+      "provider": "GMAIL_SMTP",
+      "provider_message_id": "email_767698162461",
+      "recipient": "parvesh2520@gmail.com",
+      "error": null,
+      "subject": "Accelerating developer velocity at XYZ",
+      "timestamp": "2026-09-19T18:51:31.071432+00:00"
+    },
+    "voice_agent_result": null
   }
 ]

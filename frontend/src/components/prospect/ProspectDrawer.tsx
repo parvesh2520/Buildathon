@@ -18,6 +18,7 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
   const [running, setRunning] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(prospect.status);
+  const [currentChannel, setCurrentChannel] = useState<string | undefined>(prospect.channel);
   const [execution, setExecution] = useState<ExecutionRecord | null>(null);
   const [loadingExec, setLoadingExec] = useState(true);
 
@@ -28,6 +29,8 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
         if (rec) {
           setExecution(rec);
           if (rec.status) setCurrentStatus(rec.status as any);
+          const foundChannel = rec.channel_result?.channel || rec.actual_channel || rec.recommended_channel || rec.channel;
+          if (foundChannel) setCurrentChannel(foundChannel);
         }
       })
       .finally(() => setLoadingExec(false));
@@ -41,16 +44,18 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
       const rec = await runSDR({ campaign_id: campId, prospect_id: prospect.id });
       setExecution(rec);
       const newStatus = rec.status === 'NO_FIT' ? 'NO_FIT' : rec.status === 'SENT' ? 'CONTACTED' : rec.status;
+      const dispatchedChannel = (rec.channel_result?.channel || rec.actual_channel || rec.recommended_channel || rec.channel || prospect.channel || 'EMAIL') as any;
       setCurrentStatus(newStatus as any);
+      setCurrentChannel(dispatchedChannel);
       if (onUpdated) {
         onUpdated({
           ...prospect,
           status: newStatus as any,
-          channel: (rec.actual_channel || rec.recommended_channel || prospect.channel) as any,
+          channel: dispatchedChannel,
           icpScore: rec.icp_result?.score ?? prospect.icpScore,
         });
       }
-      const ch = rec.actual_channel || rec.recommended_channel || 'Outreach';
+      const ch = dispatchedChannel || 'Outreach';
       if (rec.status === 'FAILED' || rec.status === 'BLOCKED') {
         toast.error(`SDR Execution ${rec.status}: ${rec.error || 'Execution encountered an issue'}`, { id: 'drawer-sdr' });
       } else {
@@ -95,6 +100,7 @@ export function ProspectDrawer({ prospect, onClose, onUpdated, onDeleted }: Pros
             </div>
             <div className="flex items-center gap-2 ml-4 flex-shrink-0">
               {currentStatus && <StatusBadge status={currentStatus} />}
+              {currentChannel && <StatusBadge status={currentChannel as any} />}
               <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-surface-secondary">
                 <X size={16} />
               </button>

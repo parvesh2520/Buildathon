@@ -91,14 +91,27 @@ export function CampaignDetail() {
   const handleRunSDR = async () => {
     if (!campaign || prospects.length === 0) { toast.error('No prospects to run SDR on'); return; }
     setSdrState('queued');
+    const targetProspect = prospects[0];
     try {
-      const res = await runSDR({ campaign_id: campaign.id, prospect_id: prospects[0].id });
+      const res = await runSDR({ campaign_id: campaign.id, prospect_id: targetProspect.id });
       setSdrState('done');
       if (res.status === 'FAILED' || res.status === 'BLOCKED') {
         toast.error(`SDR Execution ${res.status}: ${res.error || 'Execution encountered an issue'}`);
       } else {
-        const ch = res.actual_channel || res.recommended_channel || 'Outreach';
+        const ch = res.actual_channel || res.recommended_channel || (res as any).channel_result?.channel || targetProspect.channel || 'Outreach';
         toast.success(`Autonomous SDR Complete: ${ch} (${res.status})`);
+        setProspects((prev) =>
+          prev.map((p) =>
+            p.id === targetProspect.id
+              ? {
+                  ...p,
+                  status: (res.status === 'NO_FIT' ? 'NO_FIT' : 'CONTACTED') as any,
+                  channel: (res.actual_channel || res.recommended_channel || (res as any).channel_result?.channel || p.channel || 'EMAIL') as any,
+                  icpScore: (res as any).icp_result?.score ?? p.icpScore,
+                }
+              : p
+          )
+        );
       }
     } catch (err) {
       setSdrState('idle');

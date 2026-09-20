@@ -281,29 +281,38 @@ async def execute_sdr_pipeline(campaign_id: str, prospect_id: str) -> ExecutionR
         rec.provider_call_id = channel_outcome["provider_call_id"]
 
     final_status = channel_outcome.get("status", "FAILED")
+    actual_channel = (
+        channel_outcome.get("channel")
+        or rec.actual_channel
+        or rec.recommended_channel
+        or recommended_channel
+        or "EMAIL"
+    ).strip().upper()
+    icp_score_val = icp_res.get("score") if icp_res else None
+
     if final_status == "SENT":
         rec.status = "SENT"
-        update_prospect_status(prospect.id, "SENT")
+        update_prospect_status(prospect.id, "SENT", channel=actual_channel, icp_score=icp_score_val)
     elif final_status in ["INITIATING", "RINGING", "IN_PROGRESS"]:
         # Phone call created; never mark COMPLETED until provider confirms
         rec.status = final_status
-        update_prospect_status(prospect.id, "IN_PROGRESS")
+        update_prospect_status(prospect.id, "IN_PROGRESS", channel=actual_channel, icp_score=icp_score_val)
     elif final_status == "COMPLETED":
         rec.status = "COMPLETED"
-        update_prospect_status(prospect.id, "CONTACTED")
+        update_prospect_status(prospect.id, "CONTACTED", channel=actual_channel, icp_score=icp_score_val)
     elif final_status == "PENDING_MANUAL":
         rec.status = "PENDING_MANUAL"
-        update_prospect_status(prospect.id, "READY_TO_SEND")
+        update_prospect_status(prospect.id, "READY_TO_SEND", channel=actual_channel, icp_score=icp_score_val)
     elif final_status == "PENDING":
         rec.status = "PENDING"
-        update_prospect_status(prospect.id, "READY_TO_SEND")
+        update_prospect_status(prospect.id, "READY_TO_SEND", channel=actual_channel, icp_score=icp_score_val)
     elif final_status == "BLOCKED":
         rec.status = "BLOCKED"
         rec.error = channel_outcome.get("error", "Outreach channel blocked by campaign policy")
     else:
         rec.status = "FAILED"
         rec.error = channel_outcome.get("error", "Channel dispatch failed")
-        update_prospect_status(prospect.id, "FAILED")
+        update_prospect_status(prospect.id, "FAILED", channel=actual_channel, icp_score=icp_score_val)
 
     save_execution(rec)
 

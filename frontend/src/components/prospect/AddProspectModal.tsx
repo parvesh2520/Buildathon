@@ -53,6 +53,13 @@ export function AddProspectModal({ onClose, onCreated }: AddProspectModalProps) 
     try {
       const prospect = await createProspect(form);
 
+      // Pre-detect channel from notes if needed
+      if (!prospect.channel || prospect.channel === 'EMAIL') {
+        const n = (form.notes || '').toLowerCase();
+        if (n.includes('sms')) prospect.channel = 'SMS';
+        else if (n.includes('call') || n.includes('phone') || n.includes('voice')) prospect.channel = 'PHONE';
+      }
+
       if (autoRunSdr && form.campaignId) {
         toast.loading('Autonomous SDR: Researching lead & dispatching outreach...', { id: 'sdr-run' });
         try {
@@ -60,9 +67,13 @@ export function AddProspectModal({ onClose, onCreated }: AddProspectModalProps) 
           if (sdrRes.status === 'FAILED' || sdrRes.status === 'BLOCKED') {
             toast.error(`SDR Execution ${sdrRes.status}: ${sdrRes.error || 'Execution encountered an issue'}`, { id: 'sdr-run' });
           } else {
-            const ch = sdrRes.actual_channel || sdrRes.recommended_channel || 'Outreach';
+            const ch = (sdrRes.actual_channel || sdrRes.recommended_channel || (sdrRes as any).channel_result?.channel || prospect.channel || 'Outreach') as any;
             toast.success(`Autonomous SDR Complete: ${ch} (${sdrRes.status})`, { id: 'sdr-run' });
             prospect.status = sdrRes.status === 'NO_FIT' ? 'NO_FIT' : 'CONTACTED';
+            prospect.channel = (sdrRes.actual_channel || sdrRes.recommended_channel || (sdrRes as any).channel_result?.channel || prospect.channel || 'EMAIL') as any;
+            if ((sdrRes as any).icp_result?.score) {
+              prospect.icpScore = (sdrRes as any).icp_result.score;
+            }
           }
         } catch (sdrErr) {
           toast.error('Prospect saved, but SDR run encountered an issue', { id: 'sdr-run' });

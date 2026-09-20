@@ -101,12 +101,22 @@ def sb_upsert_prospect(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return None
 
 
-def sb_update_prospect_status(prospect_id: str, status: str) -> Optional[Dict[str, Any]]:
-    payload = {
+def sb_update_prospect_status(
+    prospect_id: str,
+    status: str,
+    channel: Optional[str] = None,
+    icp_score: Optional[int] = None,
+) -> Optional[Dict[str, Any]]:
+    payload: Dict[str, Any] = {
         "status": status,
         "last_activity_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
+    if channel:
+        payload["channel"] = channel.strip().upper()
+    if icp_score is not None:
+        payload["icp_score"] = icp_score
+
     res = _request(f"prospects?id=eq.{prospect_id}", method="PATCH", data=payload)
     if isinstance(res, list) and len(res) > 0:
         return res[0]

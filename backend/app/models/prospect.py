@@ -18,6 +18,7 @@ class ProspectCreate(BaseModel):
     notes: Optional[str] = None
     campaign_id: Optional[str] = None
     campaignId: Optional[str] = None
+    channel: Optional[str] = None
     status: Optional[str] = "FIT"
 
     @model_validator(mode="before")
@@ -230,6 +231,21 @@ _prospects: dict[str, Prospect] = _load_prospects()
 _save_prospects(_prospects)
 
 
+def _detect_channel(notes: Optional[str] = None, phone: Optional[str] = None, explicit_channel: Optional[str] = None) -> str:
+    """Intelligently detects intended outreach channel from user notes, phone availability, or explicit setting."""
+    if explicit_channel and str(explicit_channel).strip().upper() in ["EMAIL", "SMS", "LINKEDIN", "PHONE", "VOICE"]:
+        ch = str(explicit_channel).strip().upper()
+        return "PHONE" if ch == "VOICE" else ch
+    n = (notes or "").lower()
+    if "sms" in n:
+        return "SMS"
+    if "call" in n or "phone" in n or "voice" in n:
+        return "PHONE"
+    if "linkedin" in n:
+        return "LINKEDIN"
+    return "EMAIL"
+
+
 def get_all_prospects() -> list[Prospect]:
     from app.services.supabase_db import sb_get_prospects
     try:
@@ -239,6 +255,11 @@ def get_all_prospects() -> list[Prospect]:
             for item in remote:
                 p_id = item.get("id")
                 if p_id:
+                    ch = item.get("channel")
+                    notes = item.get("notes") or ""
+                    # If channel is null or default EMAIL, check if notes or phone indicate SMS/PHONE
+                    if not ch or ch == "EMAIL":
+                        ch = _detect_channel(notes, item.get("phone"), ch)
                     new_store[p_id] = Prospect(
                         id=p_id,
                         campaign_id=item.get("campaign_id"),
@@ -255,7 +276,7 @@ def get_all_prospects() -> list[Prospect]:
                         company_size=item.get("company_size"),
                         companySize=item.get("company_size"),
                         status=item.get("status", "FIT"),
-                        channel=item.get("channel", "EMAIL"),
+                        channel=ch,
                         icpScore=item.get("icp_score", 85),
                         notes=item.get("notes"),
                     )
@@ -273,6 +294,10 @@ def get_prospect(prospect_id: str) -> Optional[Prospect]:
     try:
         remote = sb_get_prospect(prospect_id)
         if remote:
+            ch = remote.get("channel")
+            notes = remote.get("notes") or ""
+            if not ch or ch == "EMAIL":
+                ch = _detect_channel(notes, remote.get("phone"), ch)
             p = Prospect(
                 id=remote["id"],
                 campaign_id=remote.get("campaign_id"),
@@ -289,7 +314,7 @@ def get_prospect(prospect_id: str) -> Optional[Prospect]:
                 company_size=remote.get("company_size"),
                 companySize=remote.get("company_size"),
                 status=remote.get("status", "FIT"),
-                channel=remote.get("channel", "EMAIL"),
+                channel=ch,
                 icpScore=remote.get("icp_score", 85),
                 notes=remote.get("notes"),
             )
@@ -325,6 +350,8 @@ def create_prospect(data: ProspectCreate) -> Prospect:
     dumped["campaignId"] = data.campaign_id
     dumped["campaignName"] = c_name
     dumped["companySize"] = data.company_size
+    detected_ch = _detect_channel(data.notes, data.phone, data.channel)
+    dumped["channel"] = detected_ch
     prospect = Prospect(id=str(uuid.uuid4()), **dumped)
     _prospects[prospect.id] = prospect
     _save_prospects(_prospects)
@@ -343,7 +370,7 @@ def create_prospect(data: ProspectCreate) -> Prospect:
             "location": prospect.location,
             "company_size": prospect.company_size or prospect.companySize,
             "status": "FIT",
-            "channel": prospect.channel or "EMAIL",
+            "channel": detected_ch,
             "icp_score": prospect.icpScore or 0,
             "notes": prospect.notes,
         }
@@ -354,18 +381,35 @@ def create_prospect(data: ProspectCreate) -> Prospect:
     return prospect
 
 
-def update_prospect_status(prospect_id: str, status: str) -> Optional[Prospect]:
+def update_prospect_status(
+    prospect_id: str,
+    status: str,
+    channel: Optional[str] = None,
+    icp_score: Optional[int] = None,
+) -> Optional[Prospect]:
     from app.services.supabase_db import sb_update_prospect_status
     prospect = _prospects.get(prospect_id)
     if prospect is None:
         return None
-    updated = prospect.model_copy(update={"status": status})
+    updates: dict[str, Any] = {"status": status}
+    if channel:
+        norm_ch = channel.strip().upper()
+        updates["channel"] = "PHONE" if norm_ch == "VOICE" else norm_ch
+    if icp_score is not None:
+        updates["icpScore"] = icp_score
+
+    updated = prospect.model_copy(update=updates)
     _prospects[prospect_id] = updated
     _save_prospects(_prospects)
 
     try:
         norm_st = "CONTACTED" if status == "SENT" else ("REVIEW" if status == "IN_PROGRESS" else status)
-        sb_update_prospect_status(prospect_id, norm_st)
+        sb_update_prospect_status(
+            prospect_id,
+            status=norm_st,
+            channel=updates.get("channel"),
+            icp_score=icp_score,
+        )
     except Exception:
         pass
 

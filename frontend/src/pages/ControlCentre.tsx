@@ -1,6 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getOperationalControls, toggleKillSwitch, toggleAgentPause } from '@/api/system';
 import { OperationalControls } from '@/types';
+
+const agentCards = [
+  {
+    id: '0',
+    title: 'Sourcing Scout',
+    badge: '99.4% Dedup Acc.',
+    sections: [
+      { label: 'Target Roles', chips: ['CTO', 'VP Eng', 'Head of Platform', '+ Role'] },
+      { label: 'Tech Stack Signals', chips: ['Cloud Native', 'K8s', 'Go / Rust', 'Bazel'] },
+    ],
+    panels: ['Geo-fence: US & Canada Only', 'Exclude Competitors: 18 Locked Brands'],
+    footer: '150 Target / day',
+  },
+  {
+    id: '1',
+    title: 'Deep Research & TTL',
+    badge: 'Evidence Gate ≥ 0.85',
+    sections: [
+      { label: 'Signal Recency TTLs', chips: ['LinkedIn 30d', 'Hiring 90d', 'Tech Stack 180d', 'Funding 365d'] },
+      { label: '6-Pillar Intelligence Mesh', chips: ['1. Company Signals', '2. Leadership Moves', '3. Casual Engine', '4. Trigger Classify', '5. CRM Enrichment', '6. Evidence Gate'] },
+    ],
+    panels: ['Signal Fusion Algorithm', 'Harmonic Mean Confidence Bias'],
+    footer: 'Autonomous Decay Daemon Active',
+  },
+  {
+    id: '2',
+    title: 'ICP Decision Gate',
+    badge: 'Zero-Token-Loss',
+    sections: [
+      { label: 'Quality Cutoff Threshold', chips: ['75 / 100'] },
+      { label: 'Deterministic Reject Gates', chips: ['Competitor Exclude', 'Geo Mismatch Drop', 'Company Size 25-2k', 'Role Mismatch Drop', 'DNC / Blacklist Halt', 'MX Bounce Verified'] },
+    ],
+    panels: ['Sub-threshold Action', 'Immediate Token Halt'],
+    footer: 'Strict fit filtering enabled',
+  },
+  {
+    id: '3',
+    title: 'Timing & Cadence',
+    badge: 'Prospect TZ Auto-Sync',
+    sections: [
+      { label: 'Engagement Windows', chips: ['Morning Slot 09:00-11:30', 'Lunch Auto-Pause', 'Afternoon Sweet Spot 14:00-16:30', 'Max Touch: 1 Call + 2 Emails / wk'] },
+    ],
+    panels: ['Prospect Timezone Normalizer', 'Skip Federal / Regional Holidays'],
+    footer: 'Adaptive Dispatch',
+  },
+  {
+    id: '4',
+    title: 'Tone & Editorial Voice',
+    badge: 'Peer-to-Peer',
+    sections: [
+      { label: 'Target Word Limit', chips: ['<45 Ultra-Concise', '45-65 Sweet Spot', '70-100 Consultative'] },
+      { label: 'Active Persona Tuning', chips: ['CTO / Technical', 'Enterprise Exec', 'Founder Agile'] },
+    ],
+    panels: ['Fluff & Synergy Stripper', 'Plain-Text Only'],
+    footer: 'Corporate pleasantries stripped',
+  },
+  {
+    id: '5',
+    title: 'Intent & Risk Governor',
+    badge: 'Freeze <100ms',
+    dark: true,
+    sections: [
+      { label: 'Hard Escalation Locks', chips: ['Hostility / Rage', 'Pricing Pledges', 'Legal & GDPR', 'Disparagement'] },
+      { label: '8-Intent Classification', chips: ['Demo Request', 'Tech Clarification', 'Forwarded', 'Timing Bad', 'Budget Block', 'DNC'] },
+    ],
+    panels: ['Sentiment Tracker', 'Positive / Neutral / Frozen'],
+    footer: 'Freeze to Ramya',
+  },
+];
+
+const policies = [
+  ['90-Day Universal Cold-Off', 'Domain freeze if no reply within 3 multi-channel sequences.'],
+  ['One-Voice Enterprise Lock', 'Restricts outbound touches to 1 rep/agent per target account.'],
+  ['Human Bottleneck Slack Alert', 'Urgent dispatch to Ramya if pending review exceeds 4h.'],
+  ['Cryptographic Audit Trail', 'Immutable ledger logging all automated AI touches and actions.'],
+];
+
+function Toggle({ active = true }: { active?: boolean }) {
+  return (
+    <span className={`flex h-6 w-11 items-center rounded-full p-1 shadow-inner ${active ? 'justify-end bg-[#33312d]' : 'justify-start bg-[#d8cec0]'}`}>
+      <span className="h-4 w-4 rounded-full bg-white shadow-sm" />
+    </span>
+  );
+}
+
+function Metric({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-2xl border border-[#ece2d4] bg-white p-5 shadow-sm">
+      <div className="text-[11px] font-bold uppercase tracking-wide text-[#83796c]">{label}</div>
+      <div className="mt-3 font-serif text-[42px] font-bold leading-none text-[#2b261f]">{value}</div>
+      {sub && <div className="mt-2 text-xs font-bold text-[#3f7f6a]">{sub}</div>}
+    </div>
+  );
+}
 
 export function ControlCentre() {
   const [controls, setControls] = useState<OperationalControls | null>(null);
@@ -33,406 +127,187 @@ export function ControlCentre() {
   };
 
   const killActive = controls?.global_kill_switch ?? false;
+  const isPaused = (agentId: string) => controls?.paused_agents.includes(agentId) ?? false;
 
   return (
-    <div className="w-full bg-surface min-h-screen px-space-lg py-space-lg">
-      <div className="flex flex-col w-full gap-space-lg pb-space-xl">
-        {/* Top Masthead & Global Controls */}
-        <div className="flex flex-col gap-space-md">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-space-xs text-outline font-label-sm text-label-sm">
-                <span>Fleet Orchestration</span>
-                <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                <span className="text-on-surface">Policies &amp; Guardrails</span>
-              </div>
-              <div className="flex flex-wrap items-baseline gap-space-sm">
-                <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">Master Control Centre</h1>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-tertiary font-label-sm text-label-sm">
-                  <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
-                  <span>All 7 Autonomous Nodes Synced</span>
-                </div>
-              </div>
+    <div className="min-h-screen w-full bg-[#fbf6ec] px-5 py-5 text-[#27231d]">
+      <div className="mx-auto flex max-w-[1140px] flex-col gap-5">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#7b7164]">
+              <span>Workspace</span>
+              <span className="material-symbols-outlined text-[15px]">chevron_right</span>
+              <span>Outreach Pipeline</span>
             </div>
-            <div className="flex items-center flex-wrap gap-space-sm">
-              <button className="px-4 py-2 rounded-full bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm hover:bg-surface-container transition-all flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-outline">science</span>
-                <span>Dry-Run Guardrails</span>
-              </button>
-              <button className="px-5 py-2 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md shadow-sm hover:brightness-105 transition-all flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">publish</span>
-                <span>Deploy Live Changes</span>
-              </button>
-              <button
-                onClick={handleKillSwitch}
-                disabled={killLoading}
-                className={`px-4 py-2 rounded-full font-label-md text-label-md shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-60 ${
-                  killActive
-                    ? 'bg-error text-on-error hover:brightness-95 animate-pulse'
-                    : 'bg-error-container text-on-error-container hover:brightness-95'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
-                <span>{killLoading ? 'Updating…' : killActive ? 'KILL SWITCH ACTIVE — Resume' : 'Kill Switch'}</span>
-              </button>
+            <div className="text-xs font-bold text-[#7b7164]">Fleet Orchestration <span className="mx-1">→</span> Policies & Guardrails Synthesizer</div>
+            <h1 className="font-serif text-[38px] font-bold leading-tight">Master Control Centre</h1>
+            <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#edf4f0] px-4 py-1.5 text-xs font-bold text-[#3f7f6a]">
+              <span className="h-2 w-2 rounded-full bg-[#3f7f6a]" />
+              All 7 Autonomous Nodes Synced & Active
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleKillSwitch}
+              disabled={killLoading || !controls}
+              className={`rounded-full px-6 py-3 text-sm font-black text-white shadow-sm disabled:opacity-60 ${killActive ? 'bg-[#9f1f1a]' : 'bg-[#be2020]'}`}
+            >
+              {killLoading ? 'Updating...' : killActive ? 'Resume Fleet' : 'Kill Switch'}
+            </button>
+          </div>
+        </header>
+
+        <section className="grid gap-3 md:grid-cols-5">
+          <Metric label="Total Active Rules" value="46" sub="Live" />
+          <Metric label="Fleet Auto Threshold" value="≥88%" sub="P95 Gate" />
+          <div className="rounded-2xl border border-[#ece2d4] bg-white p-5 shadow-sm">
+            <div className="flex justify-between text-[11px] font-bold uppercase text-[#83796c]">
+              <span>Global Burn Cap</span>
+              <span>$84 / $120</span>
+            </div>
+            <div className="mt-3 font-serif text-[42px] font-bold leading-none">70<span className="text-lg">%</span></div>
+            <div className="mt-3 h-2 rounded-full bg-[#e5dccf]">
+              <div className="h-full w-[70%] rounded-full bg-[#8a5f00]" />
             </div>
           </div>
-
-          {/* Live Telemetry KPI Ribbon */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-space-sm">
-            <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Active Fleet Rules</span>
-              <div className="flex items-baseline justify-between mt-2">
-                <span className="font-display-stat text-display-stat text-on-surface leading-none">38</span>
-                <span className="font-label-sm text-label-sm text-tertiary bg-surface-container px-2 py-0.5 rounded-md">Live</span>
+          <Metric label="P95 Handover Latency" value="118ms" sub="<120ms Cap" />
+          <div className="rounded-2xl border border-[#ece2d4] bg-white p-5 shadow-sm">
+            <div className="text-[11px] font-bold uppercase tracking-wide text-[#83796c]">Supervisor Daemon</div>
+            <div className="mt-5 flex items-center justify-between">
+              <div>
+                <div className="font-serif text-2xl font-bold">Strict Active</div>
+                <div className="mt-1 text-xs font-bold text-[#3f7f6a]">Fail-Safe Ready</div>
               </div>
-            </div>
-            <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Auto Threshold</span>
-              <div className="flex items-baseline justify-between mt-2">
-                <span className="font-display-stat text-display-stat text-on-surface leading-none">≥88%</span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md">P95</span>
-              </div>
-            </div>
-            <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Global Burn Cap</span>
-                <span className="font-label-sm text-label-sm text-outline">$84 / $120</span>
-              </div>
-              <div className="mt-2 flex flex-col gap-1.5">
-                <div className="flex items-baseline justify-between">
-                  <span className="font-display-stat text-display-stat text-on-surface leading-none">70<span className="text-headline-sm font-headline-sm">%</span></span>
-                  <span className="font-label-sm text-label-sm text-primary">Normal Burn</span>
-                </div>
-                <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                  <div className="h-full bg-primary-container rounded-full" style={{ width: '70%' }}></div>
-                </div>
-              </div>
-            </div>
-            <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Handover Latency</span>
-              <div className="flex items-baseline justify-between mt-2">
-                <span className="font-display-stat text-display-stat text-tertiary leading-none">118<span className="text-headline-sm font-headline-sm">ms</span></span>
-                <span className="font-label-sm text-label-sm text-tertiary bg-surface-container px-2 py-0.5 rounded-md">&lt;120ms Cap</span>
-              </div>
-            </div>
-            <div className="col-span-2 md:col-span-1 bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Supervisor Mode</span>
-              <div className="flex items-center justify-between mt-2">
-                <span className="font-headline-md text-headline-md text-on-surface">Strict Active</span>
-                <div className="w-3 h-3 rounded-full bg-primary animate-ping"></div>
-              </div>
+              <span className="h-3 w-3 rounded-full bg-[#3f7f6a]" />
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Central Multi-Agent Rule Matrix Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
-          {/* Node 0: Sourcing Scout */}
-          <div className={`bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between gap-space-md ${controls?.paused_agents.includes('0') ? 'opacity-60' : ''}`}>
-            <div className="flex flex-col gap-space-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center font-label-sm text-label-sm text-on-surface">0</span>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">Sourcing Scout</h2>
+        <section className="grid gap-5 lg:grid-cols-3">
+          {agentCards.map((agent) => (
+            <article
+              key={agent.id}
+              className={`rounded-[18px] border p-5 shadow-sm ${agent.dark ? 'border-[#332e28] bg-[#28241f] text-white' : 'border-[#ece2d4] bg-white'} ${isPaused(agent.id) ? 'opacity-60' : ''}`}
+            >
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-md text-sm font-black ${agent.dark ? 'bg-white text-[#28241f]' : 'bg-[#2d2a25] text-white'}`}>
+                    {agent.id}
+                  </span>
+                  <h2 className="font-serif text-xl font-bold leading-tight">{agent.title}</h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-tertiary">99.4% Dedup Acc.</span>
-                  <button onClick={() => handleAgentToggle('0')} title={controls?.paused_agents.includes('0') ? 'Resume agent' : 'Pause agent'}
-                    className={`w-9 h-5 rounded-full relative p-0.5 flex items-center transition-colors ${controls?.paused_agents.includes('0') ? 'bg-outline' : 'bg-inverse-surface'}`}>
-                    <span className={`w-4 h-4 rounded-full bg-surface-container-lowest transition-transform ${controls?.paused_agents.includes('0') ? 'translate-x-0' : 'translate-x-4'}`}></span>
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-black ${agent.dark ? 'bg-[#be2020] text-white' : 'bg-[#e9f5ef] text-[#3f7f6a]'}`}>
+                    {agent.badge}
+                  </span>
+                  <button onClick={() => handleAgentToggle(agent.id)} disabled={!controls} title={isPaused(agent.id) ? 'Resume agent' : 'Pause agent'}>
+                    <Toggle active={!isPaused(agent.id)} />
                   </button>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {['K8s', 'Go', 'Bazel', 'Rust'].map((t) => (
-                  <span key={t} className="px-2 py-0.5 rounded-md bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant">{t}</span>
-                ))}
-                <span className="px-2 py-0.5 rounded-md bg-surface-container-high font-label-sm text-label-sm text-on-surface font-semibold">CTO / VP Eng</span>
-              </div>
-              <div className="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between">
-                <span className="font-body-sm text-body-sm text-on-surface-variant">Min Commit Velocity</span>
-                <span className="font-label-md text-label-md text-on-surface">&gt;15 commits / mo</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-space-sm pt-space-xs">
-              {['Auto-Enrich Profile', 'Dedup Against CRM'].map((label) => (
-                <div key={label} className="flex items-center justify-between py-1">
-                  <span className="font-body-sm text-body-sm text-on-surface">{label}</span>
-                  <button className="w-10 h-6 bg-inverse-surface rounded-full relative p-0.5 flex items-center transition-colors">
-                    <span className="w-5 h-5 rounded-full bg-surface-container-lowest translate-x-4 transition-transform"></span>
-                  </button>
-                </div>
-              ))}
-              <div className="flex items-center justify-between py-1 bg-surface-container rounded-lg px-space-sm">
-                <span className="font-body-sm text-body-sm text-outline">Scrape Speed Limit</span>
-                <span className="font-label-md text-label-md text-on-surface">1,500 / hr</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Node 1: Deep Research */}
-          <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between gap-space-md">
-            <div className="flex flex-col gap-space-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center font-label-sm text-label-sm text-on-surface">1</span>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">Deep Research</h2>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-label-sm text-label-sm text-outline">Precision</span>
-                  <button className="w-8 h-5 bg-inverse-surface rounded-full relative p-0.5 flex items-center">
-                    <span className="w-4 h-4 rounded-full bg-surface-container-lowest translate-x-3 transition-transform"></span>
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2.5 pt-2">
-                {[
-                  { label: 'Seniority Multiplier', val: '95%', w: '95%', bar: 'bg-primary-container' },
-                  { label: 'Build Frustration Signal', val: '90%', w: '90%', bar: 'bg-primary-container' },
-                  { label: 'Tech Stack Relevance', val: '85%', w: '85%', bar: 'bg-tertiary-container' },
-                  { label: 'Funding Stage Signal', val: '80%', w: '80%', bar: 'bg-secondary-fixed-dim' },
-                ].map((s) => (
-                  <div key={s.label}>
-                    <div className="flex justify-between font-label-sm text-label-sm mb-1">
-                      <span className="text-on-surface-variant">{s.label}</span>
-                      <span className="text-on-surface font-semibold">{s.val}</span>
-                    </div>
-                    <div className="h-2 bg-surface-container rounded-full overflow-hidden">
-                      <div className={`h-full ${s.bar} rounded-full`} style={{ width: s.w }}></div>
+              <div className="flex flex-col gap-4">
+                {agent.sections.map((section) => (
+                  <div key={section.label}>
+                    <div className={`mb-2 text-[11px] font-bold uppercase tracking-wide ${agent.dark ? 'text-[#cbbfae]' : 'text-[#83796c]'}`}>{section.label}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {section.chips.map((chip, index) => (
+                        <span
+                          key={chip}
+                          className={`rounded-md px-3 py-1.5 text-xs font-bold ${
+                            agent.dark
+                              ? index < 2
+                                ? 'bg-[#4a443c] text-white'
+                                : 'bg-[#f7d7d3] text-[#9f1f1a]'
+                              : index === 1 && agent.id === '4'
+                                ? 'bg-[#e6a219] text-[#2b1f0b]'
+                                : 'bg-[#f3ede4] text-[#403931]'
+                          }`}
+                        >
+                          {chip}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-surface-container-low font-label-sm text-label-sm text-outline">
-              <span>Signal Fusion Matrix</span>
-              <span className="text-on-surface font-semibold">Harmonic Mean</span>
-            </div>
-          </div>
 
-          {/* Node 2: ICP Decision Gate */}
-          <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between gap-space-md">
-            <div className="flex flex-col gap-space-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center font-label-sm text-label-sm text-on-surface">2</span>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">ICP Decision Gate</h2>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-primary">Burn Lock $120/d</span>
-              </div>
-              <div className="bg-surface-container-low rounded-xl p-space-sm flex flex-col gap-2">
-                <div className="flex justify-between items-baseline">
-                  <span className="font-label-sm text-label-sm text-outline">Min Quality Cutoff Score</span>
-                  <span className="font-display-stat text-display-stat text-on-surface leading-none">78<span className="text-label-md text-outline">/100</span></span>
-                </div>
-                <div className="w-full flex items-center gap-2">
-                  <span className="font-label-sm text-label-sm text-outline">50</span>
-                  <div className="relative w-full h-2 bg-surface-container rounded-full">
-                    <div className="absolute h-full bg-primary rounded-full" style={{ width: '78%' }}></div>
-                    <div className="absolute w-3.5 h-3.5 bg-surface-container-lowest rounded-full -top-0.5 shadow-sm" style={{ left: 'calc(78% - 7px)' }}></div>
-                  </div>
-                  <span className="font-label-sm text-label-sm text-outline">100</span>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5 pt-1">
-                {['Non-US Geography Drop', 'Engineering Headcount ≥ 10', 'MX & Domain Hard Verification'].map((label) => (
-                  <div key={label} className="flex items-center justify-between py-1">
-                    <span className="font-body-sm text-body-sm text-on-surface">{label}</span>
-                    <button className="w-9 h-5 bg-inverse-surface rounded-full relative p-0.5 flex items-center">
-                      <span className="w-4 h-4 rounded-full bg-surface-container-lowest translate-x-4 transition-transform"></span>
-                    </button>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {agent.panels.map((panel) => (
+                  <div key={panel} className={`rounded-xl p-4 text-sm font-semibold ${agent.dark ? 'bg-[#3a352f] text-[#eee7dd]' : 'bg-[#f6efe4] text-[#4a4238]'}`}>
+                    {panel}
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="text-right">
-              <span className="font-label-sm text-label-sm text-tertiary">Zero-Loss Policy Active</span>
-            </div>
-          </div>
 
-          {/* Node 3: Outreach Timing & Cadence */}
-          <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between gap-space-md">
-            <div className="flex flex-col gap-space-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center font-label-sm text-label-sm text-on-surface">3</span>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">Timing &amp; Cadence</h2>
-                </div>
-                <span className="font-label-sm text-label-sm text-outline">Local TZ Sync</span>
+              <div className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${agent.dark ? 'bg-[#3a352f] text-[#d8cec0]' : 'bg-[#f6efe4] text-[#6e6255]'}`}>
+                {agent.footer}
               </div>
-              <div className="flex flex-col gap-2">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Engagement Windows (Local Recipient)</span>
-                <div className="h-6 w-full bg-surface-container rounded-md flex overflow-hidden p-0.5 gap-1">
-                  <div className="h-full bg-surface-container-lowest rounded-sm text-[9px] font-label-sm flex items-center justify-center text-outline" style={{ width: '25%' }}>Off</div>
-                  <div className="h-full bg-primary-container rounded-sm text-[9px] font-label-sm flex items-center justify-center text-on-primary-container font-semibold" style={{ width: '25%' }}>9:00 - 11:30</div>
-                  <div className="h-full bg-surface-container-lowest rounded-sm text-[9px] font-label-sm flex items-center justify-center text-outline" style={{ width: '15%' }}>Lunch</div>
-                  <div className="h-full bg-primary-container rounded-sm text-[9px] font-label-sm flex items-center justify-center text-on-primary-container font-semibold" style={{ width: '25%' }}>14:00 - 16:30</div>
-                  <div className="h-full bg-surface-container-lowest rounded-sm text-[9px] font-label-sm flex items-center justify-center text-outline" style={{ width: '10%' }}>Off</div>
-                </div>
-              </div>
-              <div className="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between mt-1">
-                <span className="font-body-sm text-body-sm text-on-surface-variant">Max Touch Frequency</span>
-                <span className="font-label-md text-label-md text-on-surface">1 Call + 2 Emails / wk</span>
-              </div>
+            </article>
+          ))}
+        </section>
+
+        <section className="rounded-[18px] border border-[#ece2d4] bg-white p-5 shadow-sm">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#2d2a25] text-sm font-black text-white">6</span>
+              <h2 className="font-serif text-xl font-bold">Telephony, Voice AI & Battlecards</h2>
+              <span className="rounded-full bg-[#f2eadf] px-3 py-1 text-xs font-bold">Sub-240ms Speech Engine</span>
             </div>
-            <div className="flex flex-col gap-2">
-              {['Auto-Pause Lunch Dip', 'Skip Federal Holidays'].map((label) => (
-                <div key={label} className="flex items-center justify-between">
-                  <span className="font-body-sm text-body-sm text-on-surface">{label}</span>
-                  <button className="w-9 h-5 bg-inverse-surface rounded-full relative p-0.5 flex items-center">
-                    <span className="w-4 h-4 rounded-full bg-surface-container-lowest translate-x-4 transition-transform"></span>
-                  </button>
+            <span className="text-xs font-semibold text-[#7b7164]">Active Timbre: Warm Executive Neutral</span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="rounded-xl bg-[#f6efe4] p-4">
+              <div className="text-[11px] font-bold uppercase text-[#83796c]">Call Budget Dial</div>
+              <div className="mt-2 font-serif text-[42px] font-bold leading-none">90<span className="text-sm"> sec cap</span></div>
+              <div className="mt-4 h-2 rounded-full bg-[#e0d6c8]"><div className="h-full w-[68%] rounded-full bg-[#8a5f00]" /></div>
+            </div>
+            <div className="rounded-xl bg-[#f6efe4] p-4">
+              <div className="text-[11px] font-bold uppercase text-[#83796c]">Audio Latency Cap</div>
+              <div className="mt-2 font-serif text-[42px] font-bold leading-none text-[#3f7f6a]">218<span className="text-sm text-[#27231d]"> ms</span></div>
+              <div className="mt-4 h-2 rounded-full bg-[#e0d6c8]"><div className="h-full w-[52%] rounded-full bg-[#3f7f6a]" /></div>
+            </div>
+            <div className="rounded-xl bg-[#f6efe4] p-4">
+              <div className="text-[11px] font-bold uppercase text-[#83796c]">Cultural Persona Switcher</div>
+              {['US SaaS CTO Cadence', 'Indian BFSI CIO Protocol', 'Voice AI Founders Pitch'].map((item, index) => (
+                <div key={item} className={`mt-2 rounded-md px-3 py-2 text-xs font-bold ${index === 0 ? 'bg-white text-[#2b261f]' : 'bg-[#eee5d9] text-[#6e6255]'}`}>
+                  {item}{index === 0 ? ' ✓' : ''}
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Node 4: Tone & Brevity */}
-          <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between gap-space-md">
-            <div className="flex flex-col gap-space-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center font-label-sm text-label-sm text-on-surface">4</span>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">Tone &amp; Brevity</h2>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-surface-container-high font-label-sm text-label-sm text-on-surface">Peer-to-Peer</span>
+            <div className="rounded-xl bg-[#f6efe4] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-bold">1-Sentence Pivot Rule</div>
+                <Toggle />
               </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-label-sm text-label-sm text-outline">Target Length Limit</span>
-                  <span className="font-label-md text-label-md text-on-surface">45 – 65 Words</span>
-                </div>
-                <div className="relative w-full h-2 bg-surface-container rounded-full">
-                  <div className="absolute h-full bg-tertiary rounded-full" style={{ left: '35%', width: '25%' }}></div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2 pt-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-body-sm text-body-sm text-on-surface">Zero-Fluff Sentence Stripper</span>
-                  <button className="w-9 h-5 bg-inverse-surface rounded-full relative p-0.5 flex items-center">
-                    <span className="w-4 h-4 rounded-full bg-surface-container-lowest translate-x-4 transition-transform"></span>
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-body-sm text-body-sm text-on-surface">Jargon Blacklist Filter</span>
-                  <span className="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-outline">34 Banned Terms</span>
-                </div>
-              </div>
-            </div>
-            <div className="bg-surface-container-low rounded-lg p-2 text-on-surface-variant font-label-sm text-label-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px] text-tertiary">check_circle</span>
-              <span>Corporate pleasantries disabled</span>
-            </div>
-          </div>
-
-          {/* Node 5: Safety & Routing */}
-          <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between gap-space-md">
-            <div className="flex flex-col gap-space-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center font-label-sm text-label-sm text-on-surface">5</span>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">Safety &amp; Routing</h2>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-error">Freeze to Ramya</span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Armed Stop-Words Registry</span>
-                <div className="flex flex-wrap gap-1">
-                  {['lawyer', 'pricing', 'discount', 'gdpr', 'unsubscribe'].map((word) => (
-                    <span key={word} className="px-2 py-0.5 rounded-md bg-error-container text-on-error-container font-label-sm text-label-sm flex items-center gap-1">
-                      {word}
-                      <span className="material-symbols-outlined text-[12px]">lock</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center justify-between py-1">
-                <span className="font-body-sm text-body-sm text-on-surface">Human Handover Trigger</span>
-                <span className="font-label-md text-label-md text-on-surface">&lt; 72% Conf.</span>
-              </div>
-            </div>
-            <div className="p-2 rounded-lg bg-surface-container-low flex justify-between items-center font-label-sm text-label-sm">
-              <span className="text-outline">Auto-Reply (FAQ only)</span>
-              <span className="text-tertiary font-semibold">≥ 88% Confidence</span>
-            </div>
-          </div>
-
-          {/* Node 6: Voice AI - spans full width */}
-          <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between gap-space-md md:col-span-2 lg:col-span-3">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center font-label-sm text-label-sm text-on-surface">6</span>
-                <h2 className="font-headline-md text-headline-md text-on-surface">Voice AI &amp; Synthesizer Engine</h2>
-                <span className="ml-2 px-2 py-0.5 rounded-full bg-surface-container-high font-label-sm text-label-sm text-on-surface">Low Latency Telephony</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="font-label-sm text-label-sm text-outline">Timbre: Warm Executive Neutral</span>
-                <span className="material-symbols-outlined text-[20px] text-tertiary">graphic_eq</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md pt-2">
-              <div className="bg-surface-container-low rounded-lg p-space-sm flex flex-col justify-between gap-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-body-sm text-body-sm text-on-surface">Max Speech Latency</span>
-                  <span className="font-label-md text-label-md text-tertiary">240ms cap</span>
-                </div>
-                <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                  <div className="h-full bg-tertiary rounded-full" style={{ width: '45%' }}></div>
-                </div>
-              </div>
-              <div className="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="font-body-sm text-body-sm text-on-surface">Barge-in Cutoff</span>
-                  <span className="font-label-sm text-label-sm text-outline">&lt;180ms cutoff response</span>
-                </div>
-                <button className="w-9 h-5 bg-inverse-surface rounded-full relative p-0.5 flex items-center">
-                  <span className="w-4 h-4 rounded-full bg-surface-container-lowest translate-x-4 transition-transform"></span>
-                </button>
-              </div>
-              <div className="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="font-body-sm text-body-sm text-on-surface">Live Whisper Supervisor</span>
-                  <span className="font-label-sm text-label-sm text-outline">On competitor mention</span>
-                </div>
-                <button className="w-9 h-5 bg-inverse-surface rounded-full relative p-0.5 flex items-center">
-                  <span className="w-4 h-4 rounded-full bg-surface-container-lowest translate-x-4 transition-transform"></span>
-                </button>
+              <div className="mt-7 flex items-center justify-between gap-3">
+                <div className="text-sm font-bold">DronaHQ KB Grounding</div>
+                <Toggle />
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Bottom Master Fleet Overrides */}
-        <div className="bg-surface-container-low rounded-2xl p-space-lg shadow-sm flex flex-col gap-space-md">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <section className="rounded-[24px] border border-[#e6dccf] bg-[#f6efe4] p-7 shadow-sm">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-headline-md text-headline-md text-on-surface">Fleet Governance &amp; Universal Policies</h3>
-              <p className="font-body-sm text-body-sm text-outline">Overarching guardrails that supersede individual agent parameters.</p>
+              <h2 className="font-serif text-2xl font-bold">Fleet Governance & Universal Policies</h2>
+              <p className="text-sm text-[#7b7164]">Overarching multi-agent guardrails that strictly supersede individual agent parameters.</p>
             </div>
-            <div className="flex items-center gap-2 text-tertiary font-label-sm text-label-sm bg-surface-container px-3 py-1 rounded-full w-fit">
-              <span className="material-symbols-outlined text-[16px]">verified</span>
-              <span>Cryptographic Audit Trail Active</span>
-            </div>
+            <span className="rounded-full bg-[#edf4f0] px-4 py-2 text-xs font-bold text-[#3f7f6a]">Cryptographic Audit Trail Active</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md pt-space-xs">
-            {[
-              { label: '90-Day Universal Cold-Off', desc: 'Locks domain if no positive reply within 3 sequences.' },
-              { label: 'One-Voice Enterprise Lock', desc: 'Restricts concurrent outbound touches to a single rep/agent.' },
-              { label: 'Supervisor Delay Alert', desc: 'Notifies Ramya via Slack if pending human approval > 4 hrs.' },
-            ].map((rule) => (
-              <div key={rule.label} className="bg-surface-container-lowest rounded-xl p-space-md flex items-start justify-between gap-space-sm shadow-sm">
-                <div className="flex flex-col gap-1">
-                  <span className="font-label-lg text-label-lg text-on-surface">{rule.label}</span>
-                  <span className="font-body-sm text-body-sm text-outline">{rule.desc}</span>
+          <div className="grid gap-5 md:grid-cols-4">
+            {policies.map(([title, desc]) => (
+              <article key={title} className="rounded-xl bg-white p-5 shadow-sm">
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <h3 className="font-serif text-lg font-bold leading-tight">{title}</h3>
+                  <Toggle />
                 </div>
-                <button className="w-10 h-6 bg-inverse-surface rounded-full relative p-0.5 flex items-center shrink-0">
-                  <span className="w-5 h-5 rounded-full bg-surface-container-lowest translate-x-4 transition-transform"></span>
-                </button>
-              </div>
+                <p className="text-sm leading-5 text-[#7b7164]">{desc}</p>
+              </article>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

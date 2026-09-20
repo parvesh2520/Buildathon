@@ -313,10 +313,6 @@ export function CampaignDetail() {
             <span className="material-symbols-outlined text-[16px] text-primary">bolt</span>
             {enrolling ? 'Enrolling…' : 'Enroll Leads'}
           </button>
-          <button onClick={() => navigate('/discovery')} className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md shadow-sm transition-colors border border-outline-variant/20">
-            <span className="material-symbols-outlined text-[16px] text-primary">travel_explore</span>
-            Discover Prospects
-          </button>
           <button onClick={() => setShowConflictRadar(true)} className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md shadow-sm transition-colors border border-outline-variant/20">
             <span className="material-symbols-outlined text-[16px] text-primary-container" style={{color:'#b45309'}}>radar</span>
             Conflict Radar
@@ -610,11 +606,6 @@ export function CampaignDetail() {
                   <p className="font-label-sm text-label-sm text-outline mb-2">Subject: <span className="text-on-surface font-medium">{message.subject}</span></p>
                 )}
                 <pre className="font-body-sm text-body-sm text-on-surface-variant whitespace-pre-wrap leading-relaxed">{message.body || 'No message body.'}</pre>
-              </div>
-              <div className="flex items-center gap-space-sm mt-space-md">
-                <button disabled={message.status === 'SENT'} onClick={() => toast.success('Handled by backend review queues')} className="px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md shadow-sm hover:bg-inverse-primary disabled:opacity-40 transition-all">Approve</button>
-                <button onClick={() => toast.success('Edit via Inbox replies')} className="px-4 py-1.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-all">Edit</button>
-                <button disabled={message.status === 'SENT'} onClick={() => toast.success('Handled by backend review queues')} className="px-4 py-1.5 rounded-full bg-secondary-container/20 text-on-secondary-container font-label-md text-label-md hover:bg-secondary-container/40 disabled:opacity-40 transition-all">Reject</button>
               </div>
             </div>
           ))}

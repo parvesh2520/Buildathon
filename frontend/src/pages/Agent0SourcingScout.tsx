@@ -50,7 +50,6 @@ function FilterBlock({
             {item} x
           </span>
         ))}
-        <button className="rounded-full px-2 py-1 text-xs text-[#756c5f]">+ Add...</button>
       </div>
     </div>
   );
@@ -103,16 +102,6 @@ export function Agent0SourcingScout() {
             <span className="rounded-full bg-[#fff2cc] px-3 py-1 font-bold text-[#2b261f]">
               Agent 0: Sourcing Scout
             </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-bold shadow-sm">
-              <span className="material-symbols-outlined text-[17px] text-[#8a6718]">science</span>
-              Dry Run Sourcing
-            </button>
-            <button className="flex items-center gap-2 rounded-full bg-[#8a5f00] px-6 py-2 text-xs font-bold text-white shadow-sm">
-              <span className="material-symbols-outlined text-[17px]">rocket_launch</span>
-              Deploy Scout Rules
-            </button>
           </div>
         </div>
 
@@ -354,10 +343,6 @@ export function Agent0SourcingScout() {
           <div className="flex items-center gap-2 text-sm text-[#5d5245]">
             <span className="material-symbols-outlined text-[18px] text-[#366853]">check_circle</span>
             Autosaved configuration. Agent 0 ready to supply Agent 1.
-          </div>
-          <div className="flex gap-3">
-            <button className="rounded-full bg-white px-6 py-3 text-sm font-semibold">Reset to Defaults</button>
-            <button className="rounded-full bg-[#8a5f00] px-7 py-3 text-sm font-bold text-white">Deploy Scout Rules to Fleet</button>
           </div>
         </section>
       </div>

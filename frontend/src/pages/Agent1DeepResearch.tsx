@@ -93,12 +93,6 @@ export function Agent1DeepResearch() {
             <span className="material-symbols-outlined text-[15px]">chevron_right</span>
             <span className="font-bold text-[#2b261f]">Outreach Pipeline</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="rounded-full bg-white px-5 py-2 text-sm font-bold shadow-sm">+ New Contact</button>
-            <button className="rounded-full bg-[#8a5f00] px-6 py-2 text-sm font-bold text-white shadow-sm">
-              Run Sequence
-            </button>
-          </div>
         </div>
 
         <section className="rounded-[18px] border border-[#eee4d7] bg-white p-7 shadow-sm">
@@ -235,10 +229,12 @@ export function Agent1DeepResearch() {
                   <div className="font-serif text-2xl font-bold text-[#3f7f6a]">{lead.score}</div>
                   <div className="text-xs font-bold text-[#7c7163]">Score</div>
                 </div>
-                <button className="rounded-full bg-[#e6a219] px-5 py-3 text-sm font-black text-[#2c2210] shadow-sm">
-                  Inspect Dossier
-                  <span className="material-symbols-outlined ml-1 align-middle text-[16px]">chevron_right</span>
-                </button>
+                <div className="text-right">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#f2eadf] px-3 py-1.5 text-xs font-bold text-[#5d5246]">
+                    <span className="material-symbols-outlined text-[15px] text-[#3f7f6a]">check_circle</span>
+                    Verified
+                  </span>
+                </div>
               </article>
             ))}
           </div>
@@ -248,12 +244,6 @@ export function Agent1DeepResearch() {
           <div className="flex items-center gap-3 text-sm text-[#6f665b]">
             <span className="material-symbols-outlined text-[18px] text-[#3f7f6a]">verified_user</span>
             Configuration calibrated. Agent 1 ready to process and route all 150 prospects.
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="rounded-full bg-[#f6efe4] px-8 py-3 text-sm font-bold">Save Calibration</button>
-            <button className="rounded-full bg-[#e6a219] px-9 py-3 text-sm font-black text-[#2c2210] shadow-sm">
-              Deploy Agent 1 Rules
-            </button>
           </div>
         </footer>
       </div>

@@ -39,16 +39,6 @@ export const NectarHeader: React.FC<NectarHeaderProps> = ({
           </button>
         </div>
 
-        <div className="h-5 w-px bg-surface-container-highest" />
-
-        <div className="flex items-center gap-space-xs">
-          <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">
-            <span className="material-symbols-outlined text-[20px] select-none">notifications</span>
-          </button>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">
-            <span className="material-symbols-outlined text-[20px] select-none">help</span>
-          </button>
-        </div>
 
         <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary">
           <span className="material-symbols-outlined text-[18px] select-none">person</span>

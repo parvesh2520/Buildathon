@@ -221,17 +221,7 @@ export function Agent5ConversationBasket() {
           <div className="bg-surface-container-low px-space-lg py-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm shadow-md">
             <div className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
               <span className="w-2 h-2 rounded-full bg-tertiary"></span>
-              <span>Last synchronized with SDR Ramya's preferences: 8 mins ago</span>
-            </div>
-            <div className="flex items-center gap-space-sm w-full sm:w-auto justify-end">
-              <button className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest text-on-surface hover:bg-surface-container font-label-md text-label-md shadow-sm transition-colors">
-                <span className="material-symbols-outlined text-[18px]">play_circle</span>
-                <span>Test Classifier on 10 Replies</span>
-              </button>
-              <button className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-primary-container text-on-primary-container hover:opacity-90 font-label-md text-label-md shadow-md transition-all font-semibold">
-                <span className="material-symbols-outlined text-[18px]">save</span>
-                <span>Save Intent Rules</span>
-              </button>
+              <span>Last synchronized with SDR preferences: 8 mins ago</span>
             </div>
           </div>
         </div>

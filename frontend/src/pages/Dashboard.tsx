@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getProspects, updateProspectStatus } from '@/api/prospects';
 import { Prospect } from '@/types';
 
@@ -25,9 +26,11 @@ const hourBars = ['8a', '9a', '10a', '11a', '12p', '1p', '2p', '3p', '4p', '5p']
 }));
 
 export function Dashboard() {
+  const navigate = useNavigate();
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [assistantInput, setAssistantInput] = useState('');
   const [actioningId, setActioningId] = useState<string | null>(null);
+  const [escalationTab, setEscalationTab] = useState('All');
 
   useEffect(() => {
     getProspects().then(setProspects).catch(() => {});
@@ -68,7 +71,10 @@ export function Dashboard() {
       prospect: p,
     }));
 
-  const escalations = liveEscalations;
+  const escalations = useMemo(() => {
+    if (escalationTab === 'All') return liveEscalations;
+    return liveEscalations.filter((item) => item.tag.toLowerCase() === escalationTab.toLowerCase());
+  }, [liveEscalations, escalationTab]);
 
   const handleEscalationAction = async (item: EscalationCard, status: string) => {
     if (!item.prospect) return;
@@ -94,14 +100,13 @@ export function Dashboard() {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#2f2a23] shadow-sm">
+            <button
+              onClick={() => navigate('/campaigns')}
+              className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#2f2a23] shadow-sm hover:bg-[#faf5ee] transition-colors"
+            >
               <span className="h-2.5 w-2.5 rounded-full bg-[#366853]" />
               {liveCampaignCount} campaigns active
-              <span className="material-symbols-outlined text-[16px] text-[#9b907f]">expand_more</span>
-            </button>
-            <button className="flex items-center gap-2 rounded-full bg-[#e6a219] px-5 py-2 text-sm font-bold text-[#2a2110] shadow-sm">
-              <span className="material-symbols-outlined text-[17px]">rocket_launch</span>
-              Start new sprint
+              <span className="material-symbols-outlined text-[16px] text-[#9b907f]">arrow_forward</span>
             </button>
           </div>
         </div>
@@ -145,16 +150,23 @@ export function Dashboard() {
             <input
               value={assistantInput}
               onChange={(event) => setAssistantInput(event.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && assistantInput.trim()) {
+                  navigate(`/chatbot?q=${encodeURIComponent(assistantInput.trim())}`);
+                }
+              }}
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#8b8174]"
               placeholder="Ask anything across leads, transcripts, objections, and call logs..."
             />
-            <button className="hidden h-9 w-9 items-center justify-center rounded-full bg-[#f6f0e6] text-[#6d6254] sm:flex">
-              <span className="material-symbols-outlined text-[18px]">mic</span>
-            </button>
-            <button className="hidden h-9 w-9 items-center justify-center rounded-full bg-[#f6f0e6] text-[#6d6254] sm:flex">
-              <span className="material-symbols-outlined text-[18px]">attach_file</span>
-            </button>
-            <button className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6a219] text-[#2a2110] shadow-sm">
+            <button
+              onClick={() => {
+                if (assistantInput.trim()) {
+                  navigate(`/chatbot?q=${encodeURIComponent(assistantInput.trim())}`);
+                }
+              }}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6a219] text-[#2a2110] shadow-sm hover:bg-[#d69213] transition-colors"
+              title="Search with AI Assistant"
+            >
               <span className="material-symbols-outlined text-[22px]">arrow_upward</span>
             </button>
           </div>
@@ -172,23 +184,6 @@ export function Dashboard() {
             ))}
           </div>
         </section>
-
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {[
-            { icon: 'add_circle', text: '+ Launch US SaaS Campaign' },
-            { icon: 'edit_note', text: 'Draft custom reply' },
-            { icon: 'tune', text: 'Override agent rule' },
-            { icon: 'event_available', text: "Export today's 23 booked meetings" },
-          ].map((chip) => (
-            <button
-              key={chip.text}
-              className="flex shrink-0 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#372f25] shadow-sm"
-            >
-              <span className="material-symbols-outlined text-[17px] text-[#8a6718]">{chip.icon}</span>
-              {chip.text}
-            </button>
-          ))}
-        </div>
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_360px]">
           <main className="flex flex-col gap-5">
@@ -272,14 +267,15 @@ export function Dashboard() {
               </div>
 
               <div className="mb-4 flex gap-2 overflow-x-auto">
-                {[`All (${stats.needsReview})`, 'Replied', 'Review', 'Meeting'].map((tab, index) => (
+                {['All', 'Replied', 'Review'].map((tab) => (
                   <button
                     key={tab}
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                      index === 0 ? 'bg-white text-[#2f2d28]' : 'bg-white/12 text-[#f1eadf]'
+                    onClick={() => setEscalationTab(tab)}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                      escalationTab === tab ? 'bg-white text-[#2f2d28]' : 'bg-white/12 text-[#f1eadf] hover:bg-white/20'
                     }`}
                   >
-                    {tab}
+                    {tab === 'All' ? `All (${stats.needsReview})` : tab}
                   </button>
                 ))}
               </div>
